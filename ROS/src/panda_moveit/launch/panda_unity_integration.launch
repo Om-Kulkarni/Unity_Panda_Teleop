@@ -1,13 +1,54 @@
 <launch>
+    <!-- Unity-ROS TCP connection arguments -->
     <arg name="tcp_ip" default="0.0.0.0"/>
     <arg name="tcp_port" default="10000"/>
-	
+    
+    <!-- MoveIt configuration arguments -->
+    <arg name="arm_id" default="panda" />
+    <arg name="pipeline" default="ompl" />
+    <arg name="load_gripper" default="true" />
+    <arg name="load_robot_description" default="true"/>
+    <arg name="debug" default="false" />
+    
+    <!-- Unity-ROS TCP Endpoint -->
     <node name="server_endpoint" pkg="ros_tcp_endpoint" type="default_server_endpoint.py" args="--wait" output="screen" respawn="true">
-		<param name="tcp_ip" type="string" value="$(arg tcp_ip)"/>
+        <param name="tcp_ip" type="string" value="$(arg tcp_ip)"/>
         <param name="tcp_port" type="int" value="$(arg tcp_port)"/>
-	</node>
+    </node>
+    
+    <!-- Panda MoveIt service nodes -->
     <node name="panda_mover" pkg="panda_moveit" type="panda_mover.py" args="--wait" output="screen"/>
-
-    <!-- Use official Panda MoveIt configuration -->
-    <include file="$(find panda_moveit_config)/launch/demo.launch" />
+    <node name="panda_teleop_server" pkg="panda_moveit" type="panda_teleop_server.py" args="--wait" output="screen"/>
+    
+    <!-- Essential MoveIt components only -->
+    
+    <!-- Static TF broadcaster for robot root -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="virtual_joint_broadcaster_0" 
+          args="0 0 0 0 0 0 world $(arg arm_id)_link0" />
+    
+    <!-- Fake controller setup for simulation -->
+    <group>
+        <!-- Joint state publisher for fake controllers -->
+        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+            <rosparam param="source_list">[move_group/fake_controller_joint_states]</rosparam>
+        </node>
+        
+        <!-- Robot state publisher for TF tree -->
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" 
+              respawn="true" output="screen" />
+    </group>
+    
+    <!-- MoveIt move_group node - core planning and execution -->
+    <include file="$(find panda_moveit_config)/launch/move_group.launch">
+        <arg name="arm_id" value="$(arg arm_id)" />
+        <arg name="load_robot_description" value="$(arg load_robot_description)" />
+        <arg name="load_gripper" value="$(arg load_gripper)" />
+        <arg name="pipeline" value="$(arg pipeline)" />
+        <arg name="allow_trajectory_execution" value="true" />
+        <arg name="fake_execution" value="true" />
+        <arg name="fake_execution_type" value="interpolate" />
+        <arg name="info" value="true" />
+        <arg name="debug" value="$(arg debug)" />
+    </include>
+    
 </launch>
