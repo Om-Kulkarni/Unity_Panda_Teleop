@@ -10,9 +10,10 @@ from __future__ import print_function
 import rospy
 import sys
 import moveit_commander
+import actionlib
 import geometry_msgs.msg
 from sensor_msgs.msg import JointState
-from moveit_msgs.msg import RobotState, MoveItErrorCodes
+from moveit_msgs.msg import RobotState, MoveItErrorCodes, MoveGroupAction
 from geometry_msgs.msg import Pose, PoseStamped
 from std_msgs.msg import Header
 
@@ -30,15 +31,30 @@ class PandaTeleopServer:
     
     def __init__(self):
         """Initialize the teleop server"""
+        rospy.loginfo("Initializing Panda VR teleoperation server...")
+        
+        # Wait for MoveIt to be ready
+        self._wait_for_moveit()
+        
         # Initialize MoveIt commander
         moveit_commander.roscpp_initialize(sys.argv)
         
         # Initialize the move group for the Panda manipulator
         self.group_name = "panda_manipulator"
-        self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
+        rospy.loginfo(f"Connecting to MoveIt planning group: {self.group_name}")
+        
+        try:
+            self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
+        except Exception as e:
+            rospy.logerr(f"Failed to connect to move group '{self.group_name}': {e}")
+            raise
         
         # Get the robot commander for full robot state
-        self.robot = moveit_commander.RobotCommander()
+        try:
+            self.robot = moveit_commander.RobotCommander()
+        except Exception as e:
+            rospy.logerr(f"Failed to initialize robot commander: {e}")
+            raise
         
         # Set planning parameters for fast IK solving
         self.move_group.set_planning_time(0.05)  # 50ms timeout for real-time performance
@@ -51,6 +67,26 @@ class PandaTeleopServer:
         # Initialize the service
         self.service = rospy.Service('panda_ik_solver', PandaIKSolver, self.solve_ik_callback)
         rospy.loginfo("Panda VR teleoperation IK solver service ready")
+    
+    def _wait_for_moveit(self):
+        """
+        Wait for MoveIt services to become available
+        """
+        rospy.loginfo("Waiting for MoveIt services to become available...")
+        
+        # Wait for move_group action server
+        try:
+            move_group_client = actionlib.SimpleActionClient('move_group', MoveGroupAction)
+            rospy.loginfo("Waiting for move_group action server...")
+            
+            if not move_group_client.wait_for_server(timeout=rospy.Duration(30.0)):
+                raise Exception("move_group action server not available after 30 seconds")
+            
+            rospy.loginfo("move_group action server is ready")
+            
+        except Exception as e:
+            rospy.logerr(f"Failed to connect to move_group: {e}")
+            raise
     
     def solve_ik_callback(self, req):
         """

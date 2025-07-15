@@ -18,7 +18,10 @@
     
     <!-- Panda MoveIt service nodes -->
     <node name="panda_mover" pkg="panda_moveit" type="panda_mover.py" args="--wait" output="screen"/>
-    <node name="panda_teleop_server" pkg="panda_moveit" type="panda_teleop_server.py" args="--wait" output="screen"/>
+    
+    <!-- Start teleoperation server with delay to ensure MoveIt is ready -->
+    <node name="panda_teleop_server" pkg="panda_moveit" type="panda_teleop_server.py" 
+          args="--wait" output="screen" launch-prefix="bash -c 'sleep 10; $0 $@' "/>
     
     <!-- Essential MoveIt components only -->
     
@@ -45,7 +48,7 @@
         <arg name="load_gripper" value="$(arg load_gripper)" />
         <arg name="pipeline" value="$(arg pipeline)" />
         <arg name="allow_trajectory_execution" value="true" />
-        <arg name="fake_execution" value="true" />
+        <arg name="moveit_controller_manager" value="simple" />
         <arg name="fake_execution_type" value="interpolate" />
         <arg name="info" value="true" />
         <arg name="debug" value="$(arg debug)" />
