@@ -49,6 +49,7 @@ catkin_package(
 ## Install Python scripts
 catkin_install_python(PROGRAMS
   scripts/panda_mover.py
+  scripts/panda_teleop_server.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
