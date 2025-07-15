@@ -121,19 +121,38 @@ namespace Unity.Robotics.PickAndPlace
 
         void SetupVRInteraction()
         {
-            if (endEffectorGrabInteractable == null)
+            // Auto-find the VR handle if not assigned
+            if (endEffectorGrabInteractable == null && endEffectorTransform != null)
             {
-                // Create XR Grab Interactable if it doesn't exist
-                endEffectorGrabInteractable = endEffectorTransform.gameObject.GetComponent<XRGrabInteractable>();
-                if (endEffectorGrabInteractable == null)
+                // Look for the VR handle child object
+                Transform vrHandle = endEffectorTransform.Find("EndEffector_VR_handle");
+                if (vrHandle != null)
                 {
-                    endEffectorGrabInteractable = endEffectorTransform.gameObject.AddComponent<XRGrabInteractable>();
+                    endEffectorGrabInteractable = vrHandle.GetComponent<XRGrabInteractable>();
+                    if (endEffectorGrabInteractable == null)
+                    {
+                        Debug.LogWarning("XRGrabInteractable component not found on EndEffector_VR_handle! Please add it in the inspector.");
+                        return;
+                    }
+                }
+                else
+                {
+                    Debug.LogError("EndEffector_VR_handle child object not found! Please create it as a child of the end-effector.");
+                    return;
                 }
             }
 
-            // Subscribe to grab events
-            endEffectorGrabInteractable.selectEntered.AddListener(OnGrabStarted);
-            endEffectorGrabInteractable.selectExited.AddListener(OnGrabEnded);
+            if (endEffectorGrabInteractable != null)
+            {
+                // Subscribe to grab events
+                endEffectorGrabInteractable.selectEntered.AddListener(OnGrabStarted);
+                endEffectorGrabInteractable.selectExited.AddListener(OnGrabEnded);
+                Debug.Log("VR interaction setup complete with EndEffector_VR_handle");
+            }
+            else
+            {
+                Debug.LogError("Could not setup VR interaction - endEffectorGrabInteractable is null!");
+            }
         }
 
         void InitializeROS()
@@ -149,7 +168,8 @@ namespace Unity.Robotics.PickAndPlace
             isGrabbed = true;
             vrControllerTransform = args.interactorObject.transform;
             
-            // Calculate grab offset to maintain smooth interaction
+            // Calculate grab offset relative to the actual end-effector (not the VR handle)
+            // This ensures smooth teleoperation regardless of where the VR handle is positioned
             grabOffset = endEffectorTransform.position - vrControllerTransform.position;
             grabRotationOffset = Quaternion.Inverse(vrControllerTransform.rotation) * endEffectorTransform.rotation;
             
@@ -158,7 +178,7 @@ namespace Unity.Robotics.PickAndPlace
                 StopCoroutine(teleopCoroutine);
             teleopCoroutine = StartCoroutine(TeleopLoop());
             
-            Debug.Log("VR Teleoperation Started");
+            Debug.Log("VR Teleoperation Started - controlling actual end-effector through VR handle");
         }
 
         void OnGrabEnded(SelectExitEventArgs args)
