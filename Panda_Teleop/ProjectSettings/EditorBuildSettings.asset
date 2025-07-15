@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 0
+    path: Assets/Tests/PlayMode/PlayModeTestScenes/TargetPlacementTest.unity
+    guid: 3d328f38f71b71e47bb8d96869012ffe
+  - enabled: 1
+    path: Assets/Tests/PlayMode/PlayModeTestScenes/TargetPlacementTest.unity
+    guid: 3d328f38f71b71e47bb8d96869012ffe
+  m_configObjects:
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: fac708e6351b0994b917e4470f25320c, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 4a689cf18bd0f8446af65c162d84c944, type: 2}

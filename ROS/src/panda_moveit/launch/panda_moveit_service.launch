@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Simple launch file for Panda MoveIt service -->
+  
+  <arg name="arm_id" default="panda" />
+  <arg name="load_gripper" default="true" />
+  
+  <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+  <include file="$(find panda_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true" />
+    <arg name="arm_id" value="$(arg arm_id)" />
+    <arg name="load_gripper" value="$(arg load_gripper)" />
+  </include>
+
+  <!-- Run the main MoveIt executable with fake execution for Unity integration -->
+  <include file="$(find panda_moveit_config)/launch/move_group.launch">
+    <arg name="arm_id" value="$(arg arm_id)" />
+    <arg name="load_gripper" value="$(arg load_gripper)" />
+    <arg name="allow_trajectory_execution" value="true"/>
+    <arg name="moveit_controller_manager" value="fake" />
+    <arg name="fake_execution_type" value="interpolate"/>
+    <arg name="info" value="true"/>
+    <arg name="debug" value="false"/>
+    <arg name="pipeline" value="ompl" />
+  </include>
+
+  <!-- Load controller manager configuration for fake controllers -->
+  <rosparam file="$(find panda_moveit_config)/config/fake_controllers.yaml" />
+  
+  <!-- Set the moveit_controller_manager parameter explicitly -->
+  <param name="moveit_controller_manager" value="moveit_fake_controller_manager/MoveItFakeControllerManager" />
+
+  <!-- Start the Panda MoveIt service -->
+  <node name="panda_moveit_server" pkg="panda_moveit" type="panda_mover.py" output="screen" />
+
+  <!-- Optional: Static transform from world to panda_link0 -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_panda_link0" 
+        args="0 0 0 0 0 0 world panda_link0" />
+
+</launch>

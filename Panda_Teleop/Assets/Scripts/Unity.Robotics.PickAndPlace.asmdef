@@ -1,0 +1,23 @@
+{
+    "name": "Unity.Robotics.PickAndPlace",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Robotics.RosMessages",
+        "Unity.Robotics.ROSTCPConnector",
+        "Unity.Robotics.UrdfImporter",
+        "Unity.Robotics.ROSTCPConnector.MessageGeneration",
+        "Unity.Robotics.ROSTCPConnector.Messages",
+        "Unity.InputSystem",
+        "VIVE.OpenXR",
+        "Unity.XR.Interaction.Toolkit"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
