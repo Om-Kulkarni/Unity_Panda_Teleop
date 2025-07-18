@@ -75,7 +75,6 @@ public class InitializeFrankaPose : MonoBehaviour
             if (jointIndex < initialJointAngles.Length)
             {
                 SetJointAngle(joint, initialJointAngles[jointIndex]);
-                Debug.Log($"Set {joint.name} to {initialJointAngles[jointIndex]} degrees");
                 jointIndex++;
             }
         }
@@ -101,7 +100,6 @@ public class InitializeFrankaPose : MonoBehaviour
                     SetJointAngle(joint, 0f);
                 }
             }
-            Debug.Log("InitializeFrankaPose: Reset to zero pose");
         }
     }
 
