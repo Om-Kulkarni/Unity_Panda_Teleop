@@ -59,6 +59,7 @@ ExportedObj/
 .consulo/
 .idea/
 Panda_Teleop/.vscode
+.vscode/
 
 # Build files
 *.apk
