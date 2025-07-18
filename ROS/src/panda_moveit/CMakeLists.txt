@@ -50,6 +50,7 @@ catkin_package(
 catkin_install_python(PROGRAMS
   scripts/panda_mover.py
   scripts/panda_teleop_server.py
+  scripts/panda_unity_joint_state_publisher.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

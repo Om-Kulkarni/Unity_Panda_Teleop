@@ -16,8 +16,12 @@
         <param name="tcp_port" type="int" value="$(arg tcp_port)"/>
     </node>
     
+
     <!-- Panda MoveIt service nodes -->
     <node name="panda_mover" pkg="panda_moveit" type="panda_mover.py" args="--wait" output="screen"/>
+
+    <!-- Unity joint state publisher: relays joint states from Unity to /joint_states -->
+    <node name="unity_joint_state_publisher" pkg="panda_moveit" type="panda_unity_joint_state_publisher.py" output="screen"/>
     
     <!-- Start teleoperation server with delay to ensure MoveIt is ready -->
     <node name="panda_teleop_server" pkg="panda_moveit" type="panda_teleop_server.py" 
@@ -48,7 +52,7 @@
         <arg name="load_gripper" value="$(arg load_gripper)" />
         <arg name="pipeline" value="$(arg pipeline)" />
         <arg name="allow_trajectory_execution" value="true" />
-        <arg name="moveit_controller_manager" value="simple" />
+        <arg name="moveit_controller_manager" value="fake" />
         <arg name="fake_execution_type" value="interpolate" />
         <arg name="info" value="true" />
         <arg name="debug" value="$(arg debug)" />
