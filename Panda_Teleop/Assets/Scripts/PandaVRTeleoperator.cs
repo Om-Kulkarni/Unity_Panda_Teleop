@@ -16,7 +16,7 @@ namespace Unity.Robotics.PickAndPlace
         [SerializeField] private GameObject pandaRobot;
         
         [Header("VR Interaction")]
-        [SerializeField] private XRGrabInteractable endEffectorGrabInteractable;
+        [SerializeField] private XRSimpleInteractable endEffectorInteractable;
         [SerializeField] private Transform endEffectorTransform;
         
         [Header("Control Parameters")]
@@ -122,16 +122,16 @@ namespace Unity.Robotics.PickAndPlace
         void SetupVRInteraction()
         {
             // Auto-find the VR handle if not assigned
-            if (endEffectorGrabInteractable == null && endEffectorTransform != null)
+            if (endEffectorInteractable == null && endEffectorTransform != null)
             {
                 // Look for the VR handle child object
                 Transform vrHandle = endEffectorTransform.Find("EndEffector_VR_handle");
                 if (vrHandle != null)
                 {
-                    endEffectorGrabInteractable = vrHandle.GetComponent<XRGrabInteractable>();
-                    if (endEffectorGrabInteractable == null)
+                    endEffectorInteractable = vrHandle.GetComponent<XRSimpleInteractable>();
+                    if (endEffectorInteractable == null)
                     {
-                        Debug.LogWarning("XRGrabInteractable component not found on EndEffector_VR_handle! Please add it in the inspector.");
+                        Debug.LogWarning("XRSimpleInteractable component not found on EndEffector_VR_handle! Please add it in the inspector.");
                         return;
                     }
                 }
@@ -142,16 +142,16 @@ namespace Unity.Robotics.PickAndPlace
                 }
             }
 
-            if (endEffectorGrabInteractable != null)
+            if (endEffectorInteractable != null)
             {
-                // Subscribe to grab events
-                endEffectorGrabInteractable.selectEntered.AddListener(OnGrabStarted);
-                endEffectorGrabInteractable.selectExited.AddListener(OnGrabEnded);
-                Debug.Log("VR interaction setup complete with EndEffector_VR_handle");
+                // Subscribe to select (grab) events
+                endEffectorInteractable.selectEntered.AddListener(OnGrabStarted);
+                endEffectorInteractable.selectExited.AddListener(OnGrabEnded);
+                Debug.Log("VR interaction setup complete with EndEffector_VR_handle (XRBaseInteractable)");
             }
             else
             {
-                Debug.LogError("Could not setup VR interaction - endEffectorGrabInteractable is null!");
+                Debug.LogError("Could not setup VR interaction - endEffectorInteractable is null!");
             }
         }
 
@@ -379,10 +379,10 @@ namespace Unity.Robotics.PickAndPlace
         void OnDestroy()
         {
             // Clean up event subscriptions
-            if (endEffectorGrabInteractable != null)
+            if (endEffectorInteractable != null)
             {
-                endEffectorGrabInteractable.selectEntered.RemoveListener(OnGrabStarted);
-                endEffectorGrabInteractable.selectExited.RemoveListener(OnGrabEnded);
+                endEffectorInteractable.selectEntered.RemoveListener(OnGrabStarted);
+                endEffectorInteractable.selectExited.RemoveListener(OnGrabEnded);
             }
         }
     }
