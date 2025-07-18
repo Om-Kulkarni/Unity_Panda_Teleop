@@ -118,6 +118,7 @@ find ROS/src/ros_tcp_endpoint -name "*.py" -exec sed -i '1s|^#!/usr/bin/env pyth
                 -p 5005:5005 `
                 -v /run/desktop/mnt/host/wslg/.X11-unix:/tmp/.X11-unix `
                 -v /run/desktop/mnt/host/wslg:/mnt/wslg `
+                -v ${PWD}/ROS/src/panda_moveit:/root/catkin_ws/src/panda_moveit `
                 -e DISPLAY=:0 `
                 -e WAYLAND_DISPLAY=wayland-0 `
                 -e XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir `
