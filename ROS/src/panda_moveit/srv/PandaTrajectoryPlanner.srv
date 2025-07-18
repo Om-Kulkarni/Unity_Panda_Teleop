@@ -1,0 +1,18 @@
+
+# Real-time trajectory planning service for VR teleoperation
+# This service computes a full motion plan (trajectory) to reach a target pose
+# using MoveIt, optimized for VR controller-based teleoperation.
+# It returns a RobotTrajectory for execution
+
+
+# Request fields
+geometry_msgs/Pose target_pose          # Target end-effector pose
+PandaMoveitJoints current_joints        # Current joint configuration (start state)
+string planning_group                   # MoveIt planning group (e.g., "panda_arm" or "panda_manipulator")
+
+---
+
+# Response fields
+bool success                            # True if a valid trajectory was planned
+moveit_msgs/RobotTrajectory trajectory  # Planned trajectory to reach the target pose
+string error_message                    # Error description if planning failed
