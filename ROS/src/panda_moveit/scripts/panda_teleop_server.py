@@ -6,7 +6,7 @@ import moveit_commander
 from sensor_msgs.msg import JointState
 from moveit_msgs.msg import RobotState
 from geometry_msgs.msg import PoseStamped
-from panda_moveit.srv import PandaTrajectoryPlanner, PandaTrajectoryPlannerResponse
+from panda_moveit.srv import PandaTrajectoryPlannerService, PandaTrajectoryPlannerServiceResponse
 from panda_moveit.msg import PandaMoveitJoints
 
 JOINT_NAMES = ['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7']
@@ -19,10 +19,10 @@ class PandaTeleopServer:
         self.end_effector_link = self.move_group.get_end_effector_link()
         self.move_group.set_planning_time(0.05)
         self.move_group.set_num_planning_attempts(3)
-        self.service = rospy.Service('panda_trajectory_planner', PandaTrajectoryPlanner, self.solve_ik_callback)
+        self.service = rospy.Service('panda_trajectory_planner', PandaTrajectoryPlannerService, self.solve_ik_callback)
 
     def solve_ik_callback(self, req):
-        response = PandaTrajectoryPlannerResponse()
+        response = PandaTrajectoryPlannerServiceResponse()
         # Set the robot's start state from current joints
         joint_state = JointState()
         joint_state.name = JOINT_NAMES
@@ -43,7 +43,7 @@ class PandaTeleopServer:
         self.move_group.clear_pose_targets()
 
         # Return the full trajectory in the response
-        if success and plan.joint_trajectory.points:
+        if success and plan is not None and hasattr(plan, 'joint_trajectory') and plan.joint_trajectory.points:
             response.success = True
             response.trajectory = plan  # plan is a moveit_msgs/RobotTrajectory
             response.error_message = ""
