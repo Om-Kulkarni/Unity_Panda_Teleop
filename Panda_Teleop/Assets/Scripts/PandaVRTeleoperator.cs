@@ -2,11 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR;
 using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using Unity.Robotics.UrdfImporter;
 using RosMessageTypes.PandaMoveit;
 using RosMessageTypes.Geometry;
+using UnityEngine.InputSystem;
 
 namespace Unity.Robotics.Teleoperation
 {
@@ -29,12 +31,42 @@ namespace Unity.Robotics.Teleoperation
         [Header("Robot Configuration")]
         [SerializeField] private int numJoints = 8;
 
+        [Header("Gripper Control")]
+        [SerializeField] private ArticulationBody leftGripper;
+        [SerializeField] private ArticulationBody rightGripper;
+        [SerializeField] private InputActionReference triggerInputAction; // Assign the trigger action in inspector
+        [SerializeField] private float gripperOpenPosition = 0.04f; // meters (adjust as needed)
+        [SerializeField] private float gripperClosedPosition = 0.0f; // meters (adjust as needed)
+
         [Header("Visualization")]
         [Tooltip("Show XYZ axes at the target pose for debugging/visualization.")]
         public bool showTargetPoseGizmo = true;
         [Tooltip("Length of the XYZ axes for the target pose visualization.")]
         public float targetPoseAxisLength = 0.1f;
         // Draw XYZ axes at the target pose for visualization
+
+        void Update()
+        {
+            // Gripper control: open when trigger held, close when released
+            if (triggerInputAction != null && leftGripper != null && rightGripper != null)
+            {
+                float triggerValue = triggerInputAction.action.ReadValue<float>();
+                float targetPosition = triggerValue > 0.5f ? gripperOpenPosition : gripperClosedPosition;
+                SetGripperPosition(targetPosition);
+            }
+        }
+
+        void SetGripperPosition(float position)
+        {
+            var leftDrive = leftGripper.xDrive;
+            leftDrive.target = position * Mathf.Rad2Deg;
+            leftGripper.xDrive = leftDrive;
+
+            var rightDrive = rightGripper.xDrive;
+            rightDrive.target = position * Mathf.Rad2Deg;
+            rightGripper.xDrive = rightDrive;
+        }
+
         void OnDrawGizmos()
         {
             if (!showTargetPoseGizmo) return;
@@ -162,17 +194,21 @@ namespace Unity.Robotics.Teleoperation
         {
             isGrabbed = true;
             vrControllerTransform = args.interactorObject.transform;
-            
+
+            // Synchronize Unity's joint state before starting teleoperation
+            lastSentPosition = endEffectorTransform.position;
+            lastSentRotation = endEffectorTransform.rotation;
+
             // Calculate grab offset relative to the actual end-effector (not the VR handle)
             // This ensures smooth teleoperation regardless of where the VR handle is positioned
             grabOffset = endEffectorTransform.position - vrControllerTransform.position;
             grabRotationOffset = Quaternion.Inverse(vrControllerTransform.rotation) * endEffectorTransform.rotation;
-            
+
             // Start teleoperation coroutine
             if (trackingCoroutine != null)
                 StopCoroutine(trackingCoroutine);
             trackingCoroutine = StartCoroutine(TrackTargetContinuously());
-            
+
             Debug.Log("VR Teleoperation Started - controlling actual end-effector through VR handle");
         }
 
@@ -197,7 +233,7 @@ namespace Unity.Robotics.Teleoperation
             {
                 UpdateTargetPose();
                 yield return StartCoroutine(SendMoveItTrajectoryRequest());
-                yield return new WaitForSeconds(0.1f); // Avoid spamming the service
+                yield return new WaitForSeconds(0.02f); // Faster request rate
             }
         }
 
@@ -247,7 +283,6 @@ namespace Unity.Robotics.Teleoperation
             if (resp != null && resp.success && resp.trajectory != null && resp.trajectory.joint_trajectory != null && resp.trajectory.joint_trajectory.points.Length > 0)
             {
                 var points = resp.trajectory.joint_trajectory.points;
-                double prevTime = 0.0;
                 foreach (var point in points)
                 {
                     var joints = point.positions;
@@ -266,13 +301,7 @@ namespace Unity.Robotics.Teleoperation
                             }
                         }
                     }
-                    double thisTime = point.time_from_start.sec + point.time_from_start.nanosec * 1e-9;
-                    float waitTime = (float)(thisTime - prevTime);
-                    prevTime = thisTime;
-                    if (waitTime > 0f)
-                        yield return new WaitForSeconds(waitTime);
-                    else
-                        yield return new WaitForSeconds(0.01f);
+                    // Maximum speed: no yield, all joint positions applied in one frame
                 }
                 lastSentPosition = targetPosition;
                 lastSentRotation = targetRotation;
@@ -356,6 +385,18 @@ namespace Unity.Robotics.Teleoperation
             }
             
             return positions;
+        }
+
+        void OnEnable()
+        {
+            if (triggerInputAction != null)
+                triggerInputAction.action.Enable();
+        }
+
+        void OnDisable()
+        {
+            if (triggerInputAction != null)
+                triggerInputAction.action.Disable();
         }
 
         void OnDestroy()
