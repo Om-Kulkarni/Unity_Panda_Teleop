@@ -8,7 +8,7 @@ using Unity.Robotics.UrdfImporter;
 using RosMessageTypes.PandaMoveit;
 using RosMessageTypes.Geometry;
 
-namespace Unity.Robotics.PickAndPlace
+namespace Unity.Robotics.Teleoperation
 {
     public class PandaVRTeleoperator : MonoBehaviour
     {
@@ -27,7 +27,25 @@ namespace Unity.Robotics.PickAndPlace
         public float minimumRotationThreshold = 1f; // degrees
         
         [Header("Robot Configuration")]
-        [SerializeField] private int numJoints = 7;
+        [SerializeField] private int numJoints = 8;
+
+        [Header("Visualization")]
+        [Tooltip("Show XYZ axes at the target pose for debugging/visualization.")]
+        public bool showTargetPoseGizmo = true;
+        [Tooltip("Length of the XYZ axes for the target pose visualization.")]
+        public float targetPoseAxisLength = 0.1f;
+        // Draw XYZ axes at the target pose for visualization
+        void OnDrawGizmos()
+        {
+            if (!showTargetPoseGizmo) return;
+            // Only draw if we have a valid target pose
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(targetPosition, targetPosition + targetRotation * Vector3.right * targetPoseAxisLength);
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(targetPosition, targetPosition + targetRotation * Vector3.up * targetPoseAxisLength);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(targetPosition, targetPosition + targetRotation * Vector3.forward * targetPoseAxisLength);
+        }
         
         // Robot joints
         private UrdfJointRevolute[] jointArticulationBodies;
@@ -36,11 +54,12 @@ namespace Unity.Robotics.PickAndPlace
         private static readonly string[] LinkNames =
         {
             "world/panda_link0/panda_link1", "/panda_link2", "/panda_link3", "/panda_link4", 
-            "/panda_link5", "/panda_link6", "/panda_link7"
+            "/panda_link5", "/panda_link6", "/panda_link7", "/panda_link8"
         };
         [Header("MoveIt Integration")]
-        [SerializeField] private string ikServiceName = "panda_ik_solver";
-        [SerializeField] private bool enableCollisionChecking = true;
+        [SerializeField] private string trajectoryServiceName = "panda_trajectory_planner";
+        
+        // [SerializeField] private bool enableCollisionChecking = true;
         private bool isGrabbed = false;
         private Vector3 targetPosition;
         private Quaternion targetRotation;
@@ -52,10 +71,11 @@ namespace Unity.Robotics.PickAndPlace
         
         // ROS connection
         private ROSConnection rosConnection;
+        // Publisher for Unity joint states
+        // private string unityJointStateTopic = "/unity_panda_joint_states";
         
         // Timing
-        private float lastUpdateTime;
-        private Coroutine teleopCoroutine;
+        private Coroutine trackingCoroutine;
 
         void Start()
         {
@@ -80,9 +100,6 @@ namespace Unity.Robotics.PickAndPlace
             
             // Initialize joint references
             InitializeJoints();
-            
-            if (endEffectorTransform == null)
-                endEffectorTransform = GetEndEffectorTransform();
             
             // Initialize target pose to current end-effector pose
             if (endEffectorTransform != null)
@@ -121,27 +138,6 @@ namespace Unity.Robotics.PickAndPlace
 
         void SetupVRInteraction()
         {
-            // Auto-find the VR handle if not assigned
-            if (endEffectorInteractable == null && endEffectorTransform != null)
-            {
-                // Look for the VR handle child object
-                Transform vrHandle = endEffectorTransform.Find("EndEffector_VR_handle");
-                if (vrHandle != null)
-                {
-                    endEffectorInteractable = vrHandle.GetComponent<XRSimpleInteractable>();
-                    if (endEffectorInteractable == null)
-                    {
-                        Debug.LogWarning("XRSimpleInteractable component not found on EndEffector_VR_handle! Please add it in the inspector.");
-                        return;
-                    }
-                }
-                else
-                {
-                    Debug.LogError("EndEffector_VR_handle child object not found! Please create it as a child of the end-effector.");
-                    return;
-                }
-            }
-
             if (endEffectorInteractable != null)
             {
                 // Subscribe to select (grab) events
@@ -158,9 +154,8 @@ namespace Unity.Robotics.PickAndPlace
         void InitializeROS()
         {
             rosConnection = ROSConnection.GetOrCreateInstance();
-            
-            // Register MoveIt IK service
-            rosConnection.RegisterRosService<PandaIKSolverRequest, PandaIKSolverResponse>(ikServiceName);
+            // Register MoveIt trajectory planning service
+            rosConnection.RegisterRosService<PandaTrajectoryPlannerServiceRequest, PandaTrajectoryPlannerServiceResponse>(trajectoryServiceName);
         }
 
         void OnGrabStarted(SelectEnterEventArgs args)
@@ -174,9 +169,9 @@ namespace Unity.Robotics.PickAndPlace
             grabRotationOffset = Quaternion.Inverse(vrControllerTransform.rotation) * endEffectorTransform.rotation;
             
             // Start teleoperation coroutine
-            if (teleopCoroutine != null)
-                StopCoroutine(teleopCoroutine);
-            teleopCoroutine = StartCoroutine(TeleopLoop());
+            if (trackingCoroutine != null)
+                StopCoroutine(trackingCoroutine);
+            trackingCoroutine = StartCoroutine(TrackTargetContinuously());
             
             Debug.Log("VR Teleoperation Started - controlling actual end-effector through VR handle");
         }
@@ -187,31 +182,22 @@ namespace Unity.Robotics.PickAndPlace
             vrControllerTransform = null;
             
             // Stop teleoperation
-            if (teleopCoroutine != null)
+            if (trackingCoroutine != null)
             {
-                StopCoroutine(teleopCoroutine);
-                teleopCoroutine = null;
+                StopCoroutine(trackingCoroutine);
+                trackingCoroutine = null;
             }
             
             Debug.Log("VR Teleoperation Stopped");
         }
 
-        IEnumerator TeleopLoop()
+        IEnumerator TrackTargetContinuously()
         {
-            float updateInterval = 1f / updateRate;
-            
             while (isGrabbed && vrControllerTransform != null)
             {
-                // Calculate target pose from VR controller
                 UpdateTargetPose();
-                
-                // Check if movement is significant enough to send
-                if (ShouldSendUpdate())
-                {
-                    yield return StartCoroutine(SendMoveItIKRequest());
-                }
-                
-                yield return new WaitForSeconds(updateInterval);
+                yield return StartCoroutine(SendMoveItTrajectoryRequest());
+                yield return new WaitForSeconds(0.1f); // Avoid spamming the service
             }
         }
 
@@ -239,68 +225,81 @@ namespace Unity.Robotics.PickAndPlace
                    rotationDelta > minimumRotationThreshold;
         }
 
-        IEnumerator SendMoveItIKRequest()
+
+        IEnumerator SendMoveItTrajectoryRequest()
         {
-            // Create IK request using the generated message type
-            var ikRequest = new PandaIKSolverRequest();
-            
-            // Set target pose relative to robot base
-            Vector3 relativePosition = targetPosition - pandaRobot.transform.position;
-            ikRequest.target_pose = new PoseMsg
+            // Create trajectory planning request
+            var req = new PandaTrajectoryPlannerServiceRequest();
+            Vector3 relPos = targetPosition - pandaRobot.transform.position;
+            Quaternion gripperDown = Quaternion.Euler(180f, 0f, 0f);
+            req.target_pose = new PoseMsg
             {
-                position = relativePosition.To<FLU>(),
-                orientation = targetRotation.To<FLU>()
+                position = relPos.To<FLU>(),
+                orientation = gripperDown.To<FLU>()
             };
-            
-            // Set current joint state as starting point
-            ikRequest.current_joints = GetCurrentJointState();
-            ikRequest.planning_group = "panda_manipulator";
-            ikRequest.collision_checking = enableCollisionChecking;
-            
-            // Send IK request
-            bool responseReceived = false;
-            PandaIKSolverResponse ikResponse = null;
-            
-            rosConnection.SendServiceMessage<PandaIKSolverResponse>(ikServiceName, ikRequest, (response) =>
+            req.current_joints = GetCurrentJointState();
+            req.planning_group = "panda_arm";
+
+            bool done = false;
+            PandaTrajectoryPlannerServiceResponse resp = null;
+            rosConnection.SendServiceMessage<PandaTrajectoryPlannerServiceResponse>(trajectoryServiceName, req, (r) => { resp = r; done = true; });
+            yield return new WaitUntil(() => done);
+            if (resp != null && resp.success && resp.trajectory != null && resp.trajectory.joint_trajectory != null && resp.trajectory.joint_trajectory.points.Length > 0)
             {
-                ikResponse = response;
-                responseReceived = true;
-            });
-            
-            // Wait for response with timeout
-            float timeout = 0.1f; // 100ms timeout for real-time performance
-            float startTime = Time.time;
-            
-            yield return new WaitUntil(() => responseReceived || (Time.time - startTime) > timeout);
-            
-            if (responseReceived && ikResponse != null && ikResponse.success)
-            {
-                // Apply IK solution to robot using the joint_solution from the response
-                ApplyJointSolutionFromMsg(ikResponse.joint_solution);
-                
-                // Update last sent pose
+                var points = resp.trajectory.joint_trajectory.points;
+                double prevTime = 0.0;
+                foreach (var point in points)
+                {
+                    var joints = point.positions;
+                    for (int i = 0; i < jointArticulationBodies.Length && i < joints.Length; i++)
+                    {
+                        if (jointArticulationBodies[i] != null)
+                        {
+                            var articulationBody = jointArticulationBodies[i].GetComponent<ArticulationBody>();
+                            if (articulationBody != null)
+                            {
+                                var drive = articulationBody.xDrive;
+                                drive.stiffness = 10000f;
+                                drive.forceLimit = 1000f;
+                                drive.target = (float)(joints[i]) * Mathf.Rad2Deg;
+                                articulationBody.xDrive = drive;
+                            }
+                        }
+                    }
+                    double thisTime = point.time_from_start.sec + point.time_from_start.nanosec * 1e-9;
+                    float waitTime = (float)(thisTime - prevTime);
+                    prevTime = thisTime;
+                    if (waitTime > 0f)
+                        yield return new WaitForSeconds(waitTime);
+                    else
+                        yield return new WaitForSeconds(0.01f);
+                }
                 lastSentPosition = targetPosition;
                 lastSentRotation = targetRotation;
             }
-            else if (!responseReceived)
+            else
             {
-                Debug.LogWarning("IK service timeout - target may be unreachable");
-            }
-            else if (ikResponse != null && !ikResponse.success)
-            {
-                Debug.LogWarning($"IK solver failed: {ikResponse.error_message}");
+                Debug.LogWarning("Trajectory planning failed: " + (resp != null ? resp.error_message : "No response"));
             }
         }
 
-        void ApplyJointSolutionFromMsg(PandaMoveitJointsMsg jointSolution)
+        IEnumerator ExecuteTrajectory(RosMessageTypes.Moveit.RobotTrajectoryMsg trajectory)
         {
-            // Apply joint positions to robot from PandaMoveitJointsMsg
-            for (int i = 0; i < jointSolution.joints.Length && i < numJoints; i++)
+            if (trajectory == null || trajectory.joint_trajectory == null || trajectory.joint_trajectory.points == null || trajectory.joint_trajectory.points.Length == 0)
+                yield break;
+            var jointTrajectory = trajectory.joint_trajectory;
+            foreach (var point in jointTrajectory.points)
             {
-                float jointAngleDegrees = (float)jointSolution.joints[i] * Mathf.Rad2Deg;
-                SetJointPosition(i, jointAngleDegrees);
+                var jointPositions = point.positions;
+                for (int i = 0; i < jointPositions.Length && i < numJoints; i++)
+                {
+                    float jointAngleDegrees = (float)jointPositions[i] * Mathf.Rad2Deg;
+                    SetJointPosition(i, jointAngleDegrees);
+                }
+                // Wait for a short time to simulate smooth motion
+                yield return new WaitForSeconds(0.05f);
             }
-        }
+        }        
 
         void SetJointPosition(int jointIndex, float positionDegrees)
         {
@@ -357,23 +356,6 @@ namespace Unity.Robotics.PickAndPlace
             }
             
             return positions;
-        }
-
-        /// <summary>
-        /// Get the end-effector transform for the panda_manipulator group
-        /// </summary>
-        Transform GetEndEffectorTransform()
-        {
-            if (pandaRobot == null) return null;
-            
-            // Try to find the TCP (Tool Center Point) transform
-            Transform endEffector = pandaRobot.transform.Find("world/panda_link0/panda_link1/panda_link2/panda_link3/panda_link4/panda_link5/panda_link6/panda_link7/panda_link8/panda_hand/panda_hand_tcp");
-            if (endEffector == null)
-            {
-                Debug.LogWarning("End-effector transform not found! Please ensure the robot is set up correctly.");
-                return null;
-            }
-            return endEffector;
         }
 
         void OnDestroy()

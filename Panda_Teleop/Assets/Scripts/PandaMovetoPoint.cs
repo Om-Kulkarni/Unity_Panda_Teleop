@@ -31,7 +31,7 @@ public class PandaMovetoPoint : MonoBehaviour
     void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
-        ros.RegisterRosService<PandaTrajectoryPlannerRequest, PandaTrajectoryPlannerResponse>(plannerServiceName);
+        ros.RegisterRosService<PandaTrajectoryPlannerServiceRequest, PandaTrajectoryPlannerServiceResponse>(plannerServiceName);
         InitializeJoints();
     }
 
@@ -74,7 +74,7 @@ public class PandaMovetoPoint : MonoBehaviour
 
     IEnumerator MoveToPointTrajectory()
     {
-        var req = new PandaTrajectoryPlannerRequest();
+        var req = new PandaTrajectoryPlannerServiceRequest();
         Vector3 relPos = targetTransform.position - pandaRobot.transform.position;
         // Gripper facing down: 180 deg about X axis in Unity
         Quaternion gripperDown = Quaternion.Euler(180f, 0f, 0f);
@@ -109,8 +109,8 @@ public class PandaMovetoPoint : MonoBehaviour
         req.planning_group = "panda_arm";
 
         bool done = false;
-        PandaTrajectoryPlannerResponse resp = null;
-        ros.SendServiceMessage<PandaTrajectoryPlannerResponse>(plannerServiceName, req, (r) => { resp = r; done = true; });
+        PandaTrajectoryPlannerServiceResponse resp = null;
+        ros.SendServiceMessage<PandaTrajectoryPlannerServiceResponse>(plannerServiceName, req, (r) => { resp = r; done = true; });
         yield return new WaitUntil(() => done);
         if (resp != null && resp.success && resp.trajectory != null && resp.trajectory.joint_trajectory != null && resp.trajectory.joint_trajectory.points.Length > 0)
         {
