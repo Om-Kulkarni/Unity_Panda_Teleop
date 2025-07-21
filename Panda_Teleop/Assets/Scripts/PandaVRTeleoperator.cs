@@ -267,7 +267,7 @@ namespace Unity.Robotics.Teleoperation
             // Create trajectory planning request
             var req = new PandaTrajectoryPlannerServiceRequest();
             Vector3 relPos = targetPosition - pandaRobot.transform.position;
-            Quaternion gripperDown = Quaternion.Euler(180f, 0f, 0f);
+            Quaternion gripperDown = Quaternion.Euler(180f, 45f, 0f);
             req.target_pose = new PoseMsg
             {
                 position = relPos.To<FLU>(),
