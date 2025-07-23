@@ -70,3 +70,7 @@ Panda_Teleop/.vscode
 
 # Gradle cache
 .gradle/
+
+# TextMesh Pro 
+Panda_Teleop/Assets/TextMesh Pro
+Panda_Teleop/Assets/TextMesh Pro.meta
