@@ -1,6 +1,22 @@
 # Unity_Panda_Teleop
 A VR teleoperation project for the Franka Emika Panda robot using Unity and ROS. This project enables real-time control of the Panda robot's end-effector through VR controllers with full 6DOF (position and orientation) manipulation.
 
+A demonstration video of the Panda VR Teleoperation system is available below:
+
+## Panda VR Teleoperation Demo
+
+<details>
+<summary>Click to view the Panda VR Teleop video</summary>
+
+<p align="center">
+  <video width="640" height="360" controls>
+    <source src="files/panda_VR_teleop.mp4" type="video/mp4">
+    Your browser does not support the video tag. <a href="files/panda_VR_teleop.mp4">Download the video here.</a>
+  </video>
+</p>
+
+</details>
+
 ## Features
 - Real-time VR teleoperation of Franka Panda robot
 - Full 6DOF end-effector control (position + rotation)
