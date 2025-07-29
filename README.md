@@ -10,7 +10,7 @@ A demonstration video of the Panda VR Teleoperation system is available below:
 
 <p align="center">
   <video width="640" height="360" controls>
-    <source src="files/panda_VR_teleop.mp4" type="video/mp4">
+    <source src="files/Franka_VR_Teleop.mp4" type="video/mp4">
     Your browser does not support the video tag. <a href="files/Franka_VR_Teleop.mp4">Download the video here.</a>
   </video>
 </p>
