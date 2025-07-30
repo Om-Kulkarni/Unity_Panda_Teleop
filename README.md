@@ -7,15 +7,15 @@ A demonstration video of the Panda VR Teleoperation system is available below:
 
 **Watch the Panda VR Teleoperation demo:**
 
-<p align="center">
-  <a href="files/Franka_VR_Teleop.mp4">
-    <img src="files/Franka_VR_Teleop_thumbnail.png" alt="Panda VR Teleop Demo Thumbnail" width="480" />
-  </a>
-</p>
-
-[▶️ Click here to download or view the demo video (MP4)](files/Franka_VR_Teleop.mp4)
 
 If the video does not play in your browser, right-click the link above and choose "Save link as..." to download.
+<p align="center">
+  <img src="files/Franka_VR_Teleop.gif" alt="Panda VR Teleop Demo GIF" width="480" />
+</p>
+
+[▶️ Click here to download the full demo video (MP4)](files/Franka_VR_Teleop.mp4)
+
+For higher quality or sound, download the MP4 video above.
 
 ## Features
 - Real-time VR teleoperation of Franka Panda robot
