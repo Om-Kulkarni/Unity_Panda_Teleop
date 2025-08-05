@@ -8,8 +8,11 @@ public class UIColorManager : MonoBehaviour
     [Tooltip("The GameObject containing the color wheel UI.")]
     public GameObject colorWheelObject;
 
-    [Tooltip("The Image component that will display the selected color.")]
-    public Image colorDisplayImage;
+        [Tooltip("The Image component that will display the selected color in ColorSelection UI.")]
+        public Image colorDisplayImageColorSelection;
+
+        [Tooltip("The Image component that will display the selected color in Database UI.")]
+        public Image colorDisplayImageColorDatabase;
 
     // Start is called before the first frame update
     void Start()
@@ -45,10 +48,11 @@ public class UIColorManager : MonoBehaviour
     /// <param name="newColor">The color selected by the user.</param>
     public void SetColor(Color newColor)
     {
-        if (colorDisplayImage != null)
+        if (colorDisplayImageColorSelection != null && colorDisplayImageColorDatabase != null)
         {
-            // Update the display image with the new color.
-            colorDisplayImage.color = newColor;
+            // Update both display images with the new color.
+            colorDisplayImageColorSelection.color = newColor;
+            colorDisplayImageColorDatabase.color = newColor;
         }
         else
         {
@@ -62,9 +66,5 @@ public class UIColorManager : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    
 }
