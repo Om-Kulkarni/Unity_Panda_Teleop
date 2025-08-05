@@ -53,7 +53,7 @@ public class ColorPicker : MonoBehaviour, IPointerClickHandler
         Color selectedColor = colorWheelTexture.GetPixel(pixelX, pixelY);
 
         // Pass the selected color to the manager.
-        if (uiColorManager != null && selectedColor.a > 120) // Only select if the pixel is not translucent
+        if (uiColorManager != null && selectedColor.a > 0) // Only select if the pixel is not translucent
         {
             uiColorManager.SetColor(selectedColor);
         }
