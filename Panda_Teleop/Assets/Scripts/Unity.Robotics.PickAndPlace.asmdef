@@ -9,7 +9,8 @@
         "Unity.Robotics.ROSTCPConnector.Messages",
         "Unity.InputSystem",
         "VIVE.OpenXR",
-        "Unity.XR.Interaction.Toolkit"
+        "Unity.XR.Interaction.Toolkit",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
