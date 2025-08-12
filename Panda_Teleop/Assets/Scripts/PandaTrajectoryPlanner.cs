@@ -164,27 +164,58 @@ namespace Unity.Robotics.PickAndPlace
             // Create service request
             var request = new PandaMoverServiceRequest();
             request.joints_input = GetCurrentJointState();
-            
-            // Pick Pose (with offset)
-            var pickPosition = m_Target.transform.position + m_PickPoseOffset;
-            var pickPositionRelativeToRobot = pickPosition - m_PandaRobot.transform.position;
-            var pickOrientation = GetPickOrientation(m_Target.transform);
-            var pickPose = new PoseMsg
+
+            // -- Pick Pose ---
+            // Calculate the desired world position for the pick, including the offset
+            var pickPositionWorld = m_Target.transform.position + m_PickPoseOffset;
+            // Transform the world position into robot local coordinate frame
+            var pickPositionLocal = m_PandaRobot.transform.InverseTransformPoint(pickPositionWorld);
+
+            // Get desired gripper orientation in world frame
+            var pickOrientationWorld = GetPickOrientation(m_Target.transform);
+            // Transform the orientation into robot local coordinate frame
+            var pickOrientationLocal = Quaternion.Inverse(m_PandaRobot.transform.rotation) * pickOrientationWorld;
+
+            // Assign local pick pose to request
+            request.pick_pose = new PoseMsg
             {
-                position = pickPositionRelativeToRobot.To<FLU>(),
-                orientation = pickOrientation.To<FLU>()
+                position = pickPositionLocal.To<FLU>(),
+                orientation = pickOrientationLocal.To<FLU>()
             };
-            request.pick_pose = pickPose;
-            
-            // Place Pose (with offset) - use same orientation as pick for consistency
-            var placePosition = m_TargetPlacement.transform.position + m_PickPoseOffset;
-            var placePositionRelativeToRobot = placePosition - m_PandaRobot.transform.position;
-            var placePose = new PoseMsg
+
+            // -- Place Pose ---
+            // Calculate desired world position for the place including offset
+            var placePositionWorld = m_TargetPlacement.transform.position + m_PickPoseOffset;
+            // Transform the world position into robot local coordinate frame
+            var placePositionLocal = m_PandaRobot.transform.InverseTransformPoint(placePositionWorld);
+
+            // Assign the local place pose to the request, using the same orientation as the pick for consistency
+            request.place_pose = new PoseMsg
             {
-                position = placePositionRelativeToRobot.To<FLU>(),
-                orientation = pickOrientation.To<FLU>()
+                position = placePositionLocal.To<FLU>(),
+                orientation = pickOrientationLocal.To<FLU>() // Use same local orientation
             };
-            request.place_pose = placePose;
+
+            // // Pick Pose (with offset)
+            // var pickPosition = m_Target.transform.position + m_PickPoseOffset;
+            // var pickPositionRelativeToRobot = pickPosition - m_PandaRobot.transform.position;
+            // var pickOrientation = GetPickOrientation(m_Target.transform);
+            // var pickPose = new PoseMsg
+            // {
+            //     position = pickPositionRelativeToRobot.To<FLU>(),
+            //     orientation = pickOrientation.To<FLU>()
+            // };
+            // request.pick_pose = pickPose;
+
+            // // Place Pose (with offset) - use same orientation as pick for consistency
+            // var placePosition = m_TargetPlacement.transform.position + m_PickPoseOffset;
+            // var placePositionRelativeToRobot = placePosition - m_PandaRobot.transform.position;
+            // var placePose = new PoseMsg
+            // {
+            //     position = placePositionRelativeToRobot.To<FLU>(),
+            //     orientation = pickOrientation.To<FLU>()
+            // };
+            // request.place_pose = placePose;
 
             // Send service request
             bool serviceCallComplete = false;
