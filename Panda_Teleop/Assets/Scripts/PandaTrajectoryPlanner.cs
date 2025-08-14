@@ -18,6 +18,12 @@ namespace Unity.Robotics.PickAndPlace
     /// </summary>
     public class PandaTrajectoryPlanner : MonoBehaviour
     {
+        
+        [Header("System References")] 
+        [Tooltip("The DatabaseManager script in the scene.")]
+        [SerializeField]
+        private DatabaseManager m_DatabaseManager;
+
         const int k_NumRobotJoints = 7;
         const string k_RosServiceName = "panda_moveit";
         
@@ -262,6 +268,10 @@ namespace Unity.Robotics.PickAndPlace
                     // Close the gripper if completed executing the trajectory for the Grasp pose
                     if (trajectoryIndex == (int)Poses.Grasp)
                     {
+                        if (m_DatabaseManager != null && m_Target != null)
+                        {
+                            m_DatabaseManager.StartNewDataEntry(m_Target);
+                        }
                         yield return StartCoroutine(HandleGripperAction(true));
                     }
                     
