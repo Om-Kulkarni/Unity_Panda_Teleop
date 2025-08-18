@@ -18,13 +18,11 @@ public class TrialData
     public Color trueColor;
     public Vector3 trueSize;
     public string trueTexture;
-    public string trueQuality;
 
     // User Selection (captured when user clicks 'Save')
     public Color userSelectedColor;
     public float userSelectedSize;
     public string userSelectedTexture;
-    public string userSelectedQuality;
 }
 
 // This class is the root object for the entire JSON file.
@@ -47,7 +45,6 @@ public class DatabaseManager : MonoBehaviour
     public Image colorDisplay;
     public Slider sizeSlider;
     public TMP_Dropdown textureDropdown;
-    public TMP_Dropdown qualityDropdown;
 
     private string saveFileName;
     private TrialData activeTrial; // Holds the current trial data in memory
@@ -74,6 +71,26 @@ public class DatabaseManager : MonoBehaviour
             return;
         }
 
+        // --- Get cube properties first ---
+        Renderer cubeRenderer = groundTruthCube.GetComponent<Renderer>();
+        Material cubeMaterial = cubeRenderer.material;
+        float metallicValue = cubeMaterial.GetFloat("_Metallic");
+        string textureName;
+
+        // --- NEW LOGIC: Determine texture name based on metallic value ---
+        if (metallicValue < 0.2f)
+        {
+            textureName = "Rough";
+        }
+        else if (metallicValue > 0.8f)
+        {
+            textureName = "Metallic";
+        }
+        else
+        {
+            textureName = "Standard"; // A default for values in between
+        }
+
         // Start the timers using Unity's Time.time
         trialStartTime = Time.time;
 
@@ -90,10 +107,9 @@ public class DatabaseManager : MonoBehaviour
             timestamp = DateTime.UtcNow.ToString("o"), // ISO 8601 format
 
             // Populate ground truth fields
-            trueColor = groundTruthCube.GetComponent<Renderer>().material.color,
+            trueColor = cubeMaterial.color,
             trueSize = groundTruthCube.transform.localScale,
-            trueTexture = "DummyTexture",
-            trueQuality = "DummyQuality"
+            trueTexture = textureName
         };
 
         Debug.Log($"Started new data entry with ID: {activeTrial.trialId}. Waiting for user input.");
@@ -122,7 +138,6 @@ public class DatabaseManager : MonoBehaviour
         activeTrial.userSelectedColor = colorDisplay.color;
         activeTrial.userSelectedSize = sizeSlider.value;
         activeTrial.userSelectedTexture = textureDropdown.options[textureDropdown.value].text;
-        activeTrial.userSelectedQuality = qualityDropdown.options[qualityDropdown.value].text;
 
         // --- Now, save the completed trial data to the file ---
         string filePath = Path.Combine(Application.persistentDataPath, saveFileName);
