@@ -10,7 +10,7 @@ namespace Unity.Robotics.PickAndPlace
     [RequireComponent(typeof(BoxCollider))]
     public class TargetPlacement : MonoBehaviour
     {
-        const string k_NameExpectedTarget = "Target";
+        const string k_ExpectedTag = "Target";
         static readonly int k_ShaderColorId = Shader.PropertyToID("_Color");
         // The threshold that the Target's speed must be under to be considered "placed" in the target area
         const float k_MaximumSpeedForStopped = 0.01f;
@@ -51,27 +51,20 @@ namespace Unity.Robotics.PickAndPlace
         // Start is called before the first frame update
         void Start()
         {
-            // Check for mis-configurations and disable if something has changed without this script being updated
-            // These are warnings because this script does not contain critical functionality
-            if (m_Target == null)
-            {
-                m_Target = GameObject.Find(k_NameExpectedTarget);
-            }
+            m_MeshRenderer = GetComponent<MeshRenderer>();
+            m_BoxCollider = GetComponent<BoxCollider>();
+            CurrentState = PlacementState.Outside;
+        }
 
-            if (m_Target == null)
-            {
-                Debug.LogWarning($"{nameof(TargetPlacement)} expects to find a GameObject named " +
-                    $"{k_NameExpectedTarget} to track, but did not. Can't track placement state.");
-                enabled = false;
-                return;
-            }
-
+        bool TryInitializeTarget()
+        {
             if (!TrySetComponentReferences())
             {
                 enabled = false;
-                return;
+                return false;
             }
             InitializeState();
+            return true;
         }
 
         bool TrySetComponentReferences()
@@ -80,7 +73,7 @@ namespace Unity.Robotics.PickAndPlace
             if (m_TargetMeshRenderer == null)
             {
                 Debug.LogWarning($"{nameof(TargetPlacement)} expects a {nameof(MeshRenderer)} to be attached " +
-                    $"to {k_NameExpectedTarget}. Cannot check bounds without it, so cannot track placement state.");
+                                 $"to the '{k_ExpectedTag}' object. Cannot check bounds without it.");
                 return false;
             }
 
@@ -118,7 +111,7 @@ namespace Unity.Robotics.PickAndPlace
 
         void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.name == m_Target.name)
+            if (other.CompareTag(k_ExpectedTag))
             {
                 CurrentState = PlacementState.InsideFloating;
             }
@@ -126,7 +119,7 @@ namespace Unity.Robotics.PickAndPlace
 
         void OnTriggerExit(Collider other)
         {
-            if (other.gameObject.name == m_Target.name)
+            if (other.CompareTag(k_ExpectedTag))
             {
                 CurrentState = PlacementState.Outside;
             }
