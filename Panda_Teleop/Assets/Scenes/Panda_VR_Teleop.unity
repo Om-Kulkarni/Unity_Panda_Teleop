@@ -7770,6 +7770,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84bff2c6856d33b489617ca6326b41c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_DatabaseManager: {fileID: 0}
   m_RosServiceName: panda_moveit
   m_PandaRobot: {fileID: 9793566}
   m_Target: {fileID: 0}
@@ -7789,7 +7790,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 602983063}
-  - component: {fileID: 602983064}
   - component: {fileID: 602983065}
   m_Layer: 0
   m_Name: TargetCubes
@@ -7813,18 +7813,6 @@ Transform:
   m_Father: {fileID: 2133791420}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &602983064
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 602983062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9343d39f3b8340b4b9c3a4c5b244156e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &602983065
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7837,7 +7825,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7423b7cf2a953ea4c83e6b375b2b62db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cubePrefab: {fileID: 5601983281253769233, guid: 3901759e6233748538fffdbc519c1a68, type: 3}
+  cubePrefab: {fileID: 5722445456996635358, guid: d75e68b3105e83545a488b96d3c65871, type: 3}
   spawnCenterPoint: {fileID: 602983063}
   spacing: 0.1
   hexColorCodes:
@@ -14386,8 +14374,10 @@ MonoBehaviour:
   spikeChance: 0.01
   minSpikeHeight: 20
   maxSpikeHeight: 50
+  baselinePosition: 0.15
   spikesOccurred: 0
   spikesSaved: 0
+  databaseManager: {fileID: 0}
 --- !u!114 &1323236409
 MonoBehaviour:
   m_ObjectHideFlags: 0
