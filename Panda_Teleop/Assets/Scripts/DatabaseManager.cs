@@ -26,10 +26,16 @@ public class TrialData
     public string userSelectedQuality;
 }
 
-// Helper class to allow JsonUtility to serialize a list of TrialData objects.
+// This class is the root object for the entire JSON file.
+// It holds session-wide data AND the list of all trials.
 [System.Serializable]
-public class TrialDataList
+public class SessionData
 {
+    // Session-wide data
+    public int totalSpikesOccurred;
+    public int totalSpikesSaved;
+
+    // List of individual trial data
     public List<TrialData> allTrials = new List<TrialData>();
 }
 
@@ -99,12 +105,12 @@ public class DatabaseManager : MonoBehaviour
 
         // --- Now, save the completed trial data to the file ---
         string filePath = Path.Combine(Application.persistentDataPath, saveFileName);
-        TrialDataList dataList = new TrialDataList();
+        SessionData dataList = new SessionData();
 
         if (File.Exists(filePath))
         {
             string json = File.ReadAllText(filePath);
-            dataList = JsonUtility.FromJson<TrialDataList>(json);
+            dataList = JsonUtility.FromJson<SessionData>(json);
         }
 
         dataList.allTrials.Add(activeTrial);
@@ -115,5 +121,38 @@ public class DatabaseManager : MonoBehaviour
 
         // Reset the active trial to null, ready for the next cycle
         activeTrial = null;
+    }
+
+    /// <summary>
+    /// STEP 3: Called by GraphController when the game stops.
+    /// Updates the spike counts in the existing JSON file.
+    /// </summary>
+    public void UpdateSessionSpikeCounts(int occurredCount, int savedCount)
+    {
+        SessionData sessionData = LoadSessionData(); // Load whatever data already exists
+        sessionData.totalSpikesOccurred = occurredCount;
+        sessionData.totalSpikesSaved = savedCount;
+        SaveSessionData(sessionData); // Save the updated object back to the file
+
+        Debug.Log("Updated session spike counts in JSON file.");
+    }
+
+    // HELPER METHODS to reduce code duplication 
+    private SessionData LoadSessionData()
+    {
+        string filePath = Path.Combine(Application.persistentDataPath, saveFileName);
+        if (File.Exists(filePath))
+        {
+            string json = File.ReadAllText(filePath);
+            return JsonUtility.FromJson<SessionData>(json);
+        }
+        return new SessionData(); // Return a new, empty object if file doesn't exist
+    }
+
+    private void SaveSessionData(SessionData data)
+    {
+        string filePath = Path.Combine(Application.persistentDataPath, saveFileName);
+        string updatedJson = JsonUtility.ToJson(data, true);
+        File.WriteAllText(filePath, updatedJson);
     }
 }
