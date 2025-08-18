@@ -12,6 +12,7 @@ public class TrialData
 {
     public string trialId; // Unique ID to identify this specific trial
     public string timestamp;
+    public float timeTakenSeconds;
 
     // Ground Truth (captured when robot picks up the cube)
     public Color trueColor;
@@ -34,6 +35,7 @@ public class SessionData
     // Session-wide data
     public int totalSpikesOccurred;
     public int totalSpikesSaved;
+    public float totalSessionTimeSeconds;
 
     // List of individual trial data
     public List<TrialData> allTrials = new List<TrialData>();
@@ -49,6 +51,10 @@ public class DatabaseManager : MonoBehaviour
 
     private string saveFileName;
     private TrialData activeTrial; // Holds the current trial data in memory
+
+    // Variables to track time
+    private float trialStartTime; // Time when the current cube was picked up.
+    private float sessionStartTime; // Time when the VERY FIRST cube was picked up.
 
     void Awake()
     {
@@ -66,6 +72,15 @@ public class DatabaseManager : MonoBehaviour
         {
             Debug.LogError("StartNewDataEntry called, but groundTruthCube was null.");
             return;
+        }
+
+        // Start the timers using Unity's Time.time
+        trialStartTime = Time.time;
+
+        // If this is the first cube of the session, start the main session timer.
+        if (sessionStartTime == 0f)
+        {
+            sessionStartTime = Time.time;
         }
 
         // Create a new data entry in memory
@@ -96,6 +111,12 @@ public class DatabaseManager : MonoBehaviour
             Debug.LogError("Save button clicked, but no cube has been picked up yet. Please start a new entry first.");
             return;
         }
+
+        //  Calculate the time durations
+        float timeTakenForTrial = Time.time - trialStartTime;
+        float totalSessionTime = Time.time - sessionStartTime;
+
+        Debug.Log($"Time for this trial: {timeTakenForTrial:F2}s. Total session time: {totalSessionTime:F2}s.");
 
         // Populate the user selection fields of the active trial
         activeTrial.userSelectedColor = colorDisplay.color;
