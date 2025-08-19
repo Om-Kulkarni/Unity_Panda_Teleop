@@ -19,14 +19,10 @@
 
     <!-- Panda MoveIt service nodes -->
 
-    <!-- <node name="panda_mover" pkg="panda_moveit" type="panda_mover.py" args="wait" output="screen"/> -->
+    <node name="panda_mover" pkg="panda_moveit" type="panda_mover.py" args="wait" output="screen"/>
 
     <!-- Unity joint state publisher: relays joint states from Unity to /joint_states -->
-    <node name="unity_joint_state_publisher" pkg="panda_moveit" type="panda_unity_joint_state_publisher.py" output="screen"/>
-    
-    <!-- Start teleoperation server with delay to ensure MoveIt is ready -->
-    <node name="panda_teleop_server" pkg="panda_moveit" type="panda_teleop_server.py" 
-          args="--wait" output="screen" launch-prefix="bash -c 'sleep 10; $0 $@' "/>
+    <!-- <node name="unity_joint_state_publisher" pkg="panda_moveit" type="panda_unity_joint_state_publisher.py" output="screen"/> -->
     
     <!-- Essential MoveIt components only -->
     
