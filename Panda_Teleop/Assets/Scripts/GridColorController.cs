@@ -10,7 +10,7 @@ public class GridColorController : MonoBehaviour
 
     [Header("Color Configuration")]
     // List of hex color codes to apply to the grid cells. Each string should be in #RRGGBB format.
-    public List<string> hexColorCodes = new List<string>
+    private List<string> hexColorCodes = new List<string>
     {
         "#5C89FF", // Blue
         "#00D117", // Green
