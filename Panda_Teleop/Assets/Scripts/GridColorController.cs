@@ -12,16 +12,16 @@ public class GridColorController : MonoBehaviour
     // List of hex color codes to apply to the grid cells. Each string should be in #RRGGBB format.
     public List<string> hexColorCodes = new List<string>
     {
-        "#FF5733", // Orange
-        "#33FF57", // Green
-        "#3357FF", // Blue
-        "#FFFF33", // Yellow
-        "#FF33FF", // Magenta
-        "#33FFFF", // Cyan
-        "#FFFFFF", // White
-        "#808080", // Gray
-        "#000000"  // Black
-    };    
+        "#5C89FF", // Blue
+        "#00D117", // Green
+        "#C5E620", // Light Green
+        "#BE8FFF", // Light Purple
+        "#FFA600", // Orange
+        "#FF82BB", // Pink
+        "#CF66FF", // Purple
+        "#FF0000", // Red
+        "#11CFC6"  // Turquoise
+    };
 
     // This function is called when the script instance is being loaded.
     void Awake()
