@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 using UnityEngine.InputSystem;
 using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 using UnityEngine.XR.Interaction.Toolkit;
 using Unity.Robotics.PickAndPlace;
+using UnityEngine.UI;
 
 /// <summary>
 /// Manages the pick-and-place selection process using eye-gaze.
@@ -55,8 +57,11 @@ public class GazeSelectionController : MonoBehaviour
     ///
     private void OnSelectPerformed(InputAction.CallbackContext context)
     {
-        // Ask the gazeInteractor what object the user is currently looking at.
-        GameObject hoveredObject = gazeInteractor.GetHoveredObject();
+        // Get the first interactable the gaze is hovering over, or null if there are none.
+        IXRHoverInteractable firstInteractable = gazeInteractor.interactablesHovered.FirstOrDefault();
+
+        // Get the GameObject from that interactable.
+        GameObject hoveredObject = firstInteractable != null ? (firstInteractable as MonoBehaviour).gameObject : null;
 
         // If no object is hovered, do nothing.
         if (hoveredObject == null) { return; }
