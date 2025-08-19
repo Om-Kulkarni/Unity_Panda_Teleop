@@ -46,6 +46,9 @@ public class DatabaseManager : MonoBehaviour
     public Slider sizeSlider;
     public TMP_Dropdown textureDropdown;
 
+    [Header("File Naming")]
+    public string participantName = "P01";  // Default value, can be changed in Inspector
+
     private string saveFileName;
     private TrialData activeTrial; // Holds the current trial data in memory
 
@@ -55,7 +58,7 @@ public class DatabaseManager : MonoBehaviour
 
     void Awake()
     {
-        saveFileName = $"TrialData_{DateTime.Now:yyyy-MM-dd_HH-mm}.json";
+        saveFileName = $"{participantName}_TrialData_{DateTime.Now:yyyy-MM-dd_HH-mm}.json";
     }
 
     /// <summary>
