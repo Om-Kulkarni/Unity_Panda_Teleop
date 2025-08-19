@@ -510,8 +510,7 @@ namespace Unity.Robotics.PickAndPlace
             var cubeYRotation = targetTransform.rotation.eulerAngles.y;
             var snappedYRotation = Mathf.Round(cubeYRotation / 90f) * 90f;
 
-            // Add 45° offset to align gripper fingers with cube faces
-            var gripperYaw = (snappedYRotation + 45f) % 360f;
+            var gripperYaw = (snappedYRotation) % 360f;
             
             Debug.Log($"Cube Y: {cubeYRotation:F1}°, Snapped: {snappedYRotation:F1}°, Gripper Yaw: {gripperYaw:F1}°");
             
