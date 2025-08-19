@@ -51,20 +51,25 @@ namespace Unity.Robotics.PickAndPlace
         // Start is called before the first frame update
         void Start()
         {
-            m_MeshRenderer = GetComponent<MeshRenderer>();
-            m_BoxCollider = GetComponent<BoxCollider>();
-            CurrentState = PlacementState.Outside;
-        }
+            if (m_Target == null)
+            {
+                m_Target = GameObject.FindGameObjectWithTag(k_ExpectedTag);
+            }
 
-        bool TryInitializeTarget()
-        {
+            if (m_Target == null)
+            {
+                Debug.LogWarning($"{nameof(TargetPlacement)} expects to find a GameObject with tag " +
+                    $"{k_ExpectedTag} to track, but did not. Can't track placement state.");
+                enabled = false;
+                return;
+            }
+
             if (!TrySetComponentReferences())
             {
                 enabled = false;
-                return false;
+                return;
             }
             InitializeState();
-            return true;
         }
 
         bool TrySetComponentReferences()
@@ -73,7 +78,7 @@ namespace Unity.Robotics.PickAndPlace
             if (m_TargetMeshRenderer == null)
             {
                 Debug.LogWarning($"{nameof(TargetPlacement)} expects a {nameof(MeshRenderer)} to be attached " +
-                                 $"to the '{k_ExpectedTag}' object. Cannot check bounds without it.");
+                    $"to the target with tag '{k_ExpectedTag}'. Cannot check bounds without it, so cannot track placement state.");
                 return false;
             }
 
