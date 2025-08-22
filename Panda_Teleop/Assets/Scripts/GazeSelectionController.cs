@@ -57,11 +57,13 @@ public class GazeSelectionController : MonoBehaviour
     ///
     private void OnSelectPerformed(InputAction.CallbackContext context)
     {
-        // Get the first interactable the gaze is hovering over, or null if there are none.
-        IXRHoverInteractable firstInteractable = gazeInteractor.interactablesHovered.FirstOrDefault();
+        // // Get the first interactable the gaze is hovering over, or null if there are none.
+        // IXRHoverInteractable firstInteractable = gazeInteractor.interactablesHovered.FirstOrDefault();
 
-        // Get the GameObject from that interactable.
-        GameObject hoveredObject = firstInteractable != null ? (firstInteractable as MonoBehaviour).gameObject : null;
+        // // Get the GameObject from that interactable.
+        // GameObject hoveredObject = firstInteractable != null ? (firstInteractable as MonoBehaviour).gameObject : null;
+
+        GameObject hoveredObject = gazeInteractor.GetHoveredObject();
 
         // If no object is hovered, do nothing.
         if (hoveredObject == null) { return; }
