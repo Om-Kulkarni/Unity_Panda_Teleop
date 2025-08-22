@@ -6,33 +6,34 @@ using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
 using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using Unity.Robotics.UrdfImporter;
-using RosMessageTypes.PandaMoveit;  // Updated to use PandaMoveit messages
+using RosMessageTypes.PandaMoveit;
 using RosMessageTypes.Geometry;
 using RosMessageTypes.Trajectory;
-using RosMessageTypes.Moveit;       // For RobotTrajectoryMsg
+using RosMessageTypes.Moveit;
 
 namespace Unity.Robotics.PickAndPlace
 {
     /// <summary>
-    ///     Trajectory planner for the Franka Panda robot using MoveIt
+    /// Trajectory planner for the Franka Panda robot using MoveIt.
+    /// This version includes a final upward lift movement after placing an object.
     /// </summary>
     public class PandaTrajectoryPlanner : MonoBehaviour
     {
-        
-        [Header("System References")] 
+        [Header("System References")]
         [Tooltip("The DatabaseManager script in the scene.")]
         [SerializeField]
         private DatabaseManager m_DatabaseManager;
 
         const int k_NumRobotJoints = 7;
         const string k_RosServiceName = "panda_moveit";
-        
+
         public static readonly string[] LinkNames =
         {
-            "world/panda_link0/panda_link1", "/panda_link2", "/panda_link3", "/panda_link4", 
+            "world/panda_link0/panda_link1", "/panda_link2", "/panda_link3", "/panda_link4",
             "/panda_link5", "/panda_link6", "/panda_link7"
         };
 
+        [Header("ROS and Robot Setup")]
         [SerializeField]
         string m_RosServiceName = "panda_moveit";
         public string RosServiceName { get => m_RosServiceName; set => m_RosServiceName = value; }
@@ -41,13 +42,21 @@ namespace Unity.Robotics.PickAndPlace
         [Tooltip("The GameObject representing the Panda robot")]
         GameObject m_PandaRobot;
         public GameObject PandaRobot { get => m_PandaRobot; set => m_PandaRobot = value; }
+
         [SerializeField]
         GameObject m_Target;
         public GameObject Target { get => m_Target; set => m_Target = value; }
+
         [SerializeField]
         GameObject m_TargetPlacement;
         public GameObject TargetPlacement { get => m_TargetPlacement; set => m_TargetPlacement = value; }
+        
+        [SerializeField]
+        [Tooltip("MoveIt planning group to use for trajectory planning")]
+        string m_PlanningGroup = "panda_manipulator";
+        public string PlanningGroup => m_PlanningGroup;
 
+        [Header("Movement Parameters")]
         [SerializeField]
         [Tooltip("Speed factor for trajectory execution (0.1 = 10% speed)")]
         float m_SpeedFactor = 0.5f;
@@ -59,12 +68,13 @@ namespace Unity.Robotics.PickAndPlace
         [SerializeField]
         [Tooltip("Additional offset for gripper TCP to prevent collision with table (in meters)")]
         float m_GripperTcpOffset = 0.05f;
-
+        
+        //-- NEW --//
         [SerializeField]
-        [Tooltip("MoveIt planning group to use for trajectory planning")]
-        string m_PlanningGroup = "panda_manipulator";
-        public string PlanningGroup => m_PlanningGroup;
+        [Tooltip("Height to lift the end-effector after placing the object (in meters)")]
+        float m_PostPlaceLiftHeight = 0.1f;
 
+        [Header("Gripper Settings")]
         [SerializeField]
         [Tooltip("Gripper open position (meters)")]
         float m_GripperOpenPosition = 0.04f;
@@ -137,7 +147,7 @@ namespace Unity.Robotics.PickAndPlace
         }
 
         /// <summary>
-        ///     Execute a full pick and place operation
+        /// Execute a full pick and place operation
         /// </summary>
         public void ExecutePickAndPlace()
         {
@@ -157,7 +167,7 @@ namespace Unity.Robotics.PickAndPlace
         }
 
         /// <summary>
-        ///     Execute pick and place operation as a coroutine
+        /// Execute pick and place operation as a coroutine
         /// </summary>
         IEnumerator ExecutePickAndPlaceCoroutine()
         {
@@ -172,17 +182,10 @@ namespace Unity.Robotics.PickAndPlace
             request.joints_input = GetCurrentJointState();
 
             // -- Pick Pose ---
-            // Calculate the desired world position for the pick, including the offset
             var pickPositionWorld = m_Target.transform.position + m_PickPoseOffset;
-            // Transform the world position into robot local coordinate frame
             var pickPositionLocal = m_PandaRobot.transform.InverseTransformPoint(pickPositionWorld);
-
-            // Get desired gripper orientation in world frame
             var pickOrientationWorld = GetPickOrientation(m_Target.transform);
-            // Transform the orientation into robot local coordinate frame
             var pickOrientationLocal = Quaternion.Inverse(m_PandaRobot.transform.rotation) * pickOrientationWorld;
-
-            // Assign local pick pose to request
             request.pick_pose = new PoseMsg
             {
                 position = pickPositionLocal.To<FLU>(),
@@ -190,38 +193,13 @@ namespace Unity.Robotics.PickAndPlace
             };
 
             // -- Place Pose ---
-            // Calculate desired world position for the place including offset
             var placePositionWorld = m_TargetPlacement.transform.position + m_PickPoseOffset;
-            // Transform the world position into robot local coordinate frame
             var placePositionLocal = m_PandaRobot.transform.InverseTransformPoint(placePositionWorld);
-
-            // Assign the local place pose to the request, using the same orientation as the pick for consistency
             request.place_pose = new PoseMsg
             {
                 position = placePositionLocal.To<FLU>(),
-                orientation = pickOrientationLocal.To<FLU>() // Use same local orientation
+                orientation = pickOrientationLocal.To<FLU>()
             };
-
-            // // Pick Pose (with offset)
-            // var pickPosition = m_Target.transform.position + m_PickPoseOffset;
-            // var pickPositionRelativeToRobot = pickPosition - m_PandaRobot.transform.position;
-            // var pickOrientation = GetPickOrientation(m_Target.transform);
-            // var pickPose = new PoseMsg
-            // {
-            //     position = pickPositionRelativeToRobot.To<FLU>(),
-            //     orientation = pickOrientation.To<FLU>()
-            // };
-            // request.pick_pose = pickPose;
-
-            // // Place Pose (with offset) - use same orientation as pick for consistency
-            // var placePosition = m_TargetPlacement.transform.position + m_PickPoseOffset;
-            // var placePositionRelativeToRobot = placePosition - m_PandaRobot.transform.position;
-            // var placePose = new PoseMsg
-            // {
-            //     position = placePositionRelativeToRobot.To<FLU>(),
-            //     orientation = pickOrientation.To<FLU>()
-            // };
-            // request.place_pose = placePose;
 
             // Send service request
             bool serviceCallComplete = false;
@@ -251,7 +229,7 @@ namespace Unity.Robotics.PickAndPlace
         }
 
         /// <summary>
-        ///     Execute the trajectories returned by MoveIt
+        /// Execute the trajectories returned by MoveIt, including the new post-place lift.
         /// </summary>
         IEnumerator ExecuteTrajectories(PandaMoverServiceResponse response)
         {
@@ -279,40 +257,63 @@ namespace Unity.Robotics.PickAndPlace
                     yield return new WaitForSeconds(0.5f / m_SpeedFactor);
                 }
 
-                // All trajectories have been executed, open the gripper to place the target cube
+                // All pick-and-place trajectories have been executed, open the gripper to place the target cube
                 yield return StartCoroutine(HandleGripperAction(false));
 
-                // After placing, move up by adjusting joint 2 and 3 to lift the end effector
-                var currentJoints = GetCurrentJointPositions();
-                
-                // Create a simple trajectory point to move joints 1 and 2 to lift the end effector
-                var liftTrajectory = new RobotTrajectoryMsg
+                // -- MODIFIED: Plan and execute a final upward lift movement --
+                Debug.Log("Planning post-place lift trajectory.");
+
+                // Define the target lift pose in world coordinates
+                var liftPositionWorld = m_TargetPlacement.transform.position + m_PickPoseOffset + (Vector3.up * m_PostPlaceLiftHeight);
+                var liftOrientationWorld = GetPickOrientation(m_Target.transform); // Use same orientation
+
+                // Create a new service request for this single move
+                var liftRequest = new PandaMoverServiceRequest
                 {
-                    joint_trajectory = new JointTrajectoryMsg
-                    {
-                        points = new[]
-                        {
-                            new JointTrajectoryPointMsg
-                            {
-                                positions = currentJoints.Select((pos, index) =>
-                                {
-                                    // Adjust joint 1 (shoulder) and joint 2 (elbow) to create upward motion
-                                    if (index == 1)
-                                        return pos - 0.2; // Decrease shoulder angle
-                                    else if (index == 2)
-                                        return pos + 0.2; // Increase elbow angle
-                                    return pos; // Keep other joints the same
-                                }).ToArray()
-                            }
-                        }
-                    }
+                    joints_input = GetCurrentJointState() // Plan from the current robot state
                 };
 
-                // Execute the lift trajectory
-                yield return StartCoroutine(ExecuteTrajectory(liftTrajectory));
-                
-                // Wait a moment for the movement to complete
-                yield return new WaitForSeconds(0.5f / m_SpeedFactor);
+                // Transform the world pose into the robot's local coordinate frame
+                var liftPositionLocal = m_PandaRobot.transform.InverseTransformPoint(liftPositionWorld);
+                var liftOrientationLocal = Quaternion.Inverse(m_PandaRobot.transform.rotation) * liftOrientationWorld;
+
+                // Use the 'pick_pose' field to send our single target pose.
+                // We assume the ROS service can plan a trajectory from the current joint state to this pose.
+                liftRequest.pick_pose = new PoseMsg
+                {
+                    position = liftPositionLocal.To<FLU>(),
+                    orientation = liftOrientationLocal.To<FLU>()
+                };
+
+                // To ensure the service doesn't error, we can provide a dummy place_pose.
+                liftRequest.place_pose = liftRequest.pick_pose;
+
+                // Send the service request to MoveIt
+                bool liftServiceCallComplete = false;
+                PandaMoverServiceResponse liftResponse = null;
+
+                m_Ros.SendServiceMessage<PandaMoverServiceResponse>(k_RosServiceName, liftRequest, (r) =>
+                {
+                    liftResponse = r;
+                    liftServiceCallComplete = true;
+                });
+
+                // Wait for the service to return a trajectory
+                yield return new WaitUntil(() => liftServiceCallComplete);
+
+                if (liftResponse != null && liftResponse.trajectories.Length > 0)
+                {
+                    Debug.Log("Executing post-place lift trajectory.");
+                    // Execute only the first trajectory returned, which should be the path to our lift pose.
+                    yield return StartCoroutine(ExecuteTrajectory(liftResponse.trajectories[0]));
+                    
+                    // Wait a moment for the movement to complete
+                    yield return new WaitForSeconds(0.5f / m_SpeedFactor);
+                }
+                else
+                {
+                    Debug.LogError("No trajectory returned from MoverService for the lift phase.");
+                }
             }
         }
         
@@ -325,7 +326,7 @@ namespace Unity.Robotics.PickAndPlace
         }
 
         /// <summary>
-        ///     Execute a single trajectory
+        /// Execute a single trajectory
         /// </summary>
         IEnumerator ExecuteTrajectory(RobotTrajectoryMsg trajectory)
         {
@@ -354,7 +355,7 @@ namespace Unity.Robotics.PickAndPlace
         }
         
         /// <summary>
-        ///     Handle gripper open/close actions using ArticulationBody control
+        /// Handle gripper open/close actions using ArticulationBody control
         /// </summary>
         IEnumerator HandleGripperAction(bool close)
         {
@@ -362,16 +363,13 @@ namespace Unity.Robotics.PickAndPlace
             {
                 if (close)
                 {
-                    // Close gripper - use simple approach like Niryo
                     MoveGripper(m_GripperClosedPosition, m_GripperClosedPosition);
                 }
                 else
                 {
-                    // Open gripper
                     MoveGripper(m_GripperOpenPosition, m_GripperOpenPosition);
                 }
                 
-                // Use Niryo's timing approach
                 yield return new WaitForSeconds(0.5f);
             }
             else
@@ -394,6 +392,8 @@ namespace Unity.Robotics.PickAndPlace
                 yield return new WaitForSeconds(0.5f);
             }
         }
+
+        #region Helper Functions
 
         PandaMoveitJointsMsg GetCurrentJointState()
         {
@@ -419,24 +419,19 @@ namespace Unity.Robotics.PickAndPlace
                     var articulationBody = m_JointArticulationBodies[i].GetComponent<ArticulationBody>();
                     if (articulationBody != null)
                     {
-                        // Use jointPosition[0] like the working TrajectoryPlanner
                         positions[i] = articulationBody.jointPosition[0];
                     }
                     else
                     {
-                        // Fallback to UrdfJointRevolute method
                         positions[i] = m_JointArticulationBodies[i].GetPosition();
                     }
                 }
                 else
                 {
                     Debug.LogWarning($"Joint {i} ArticulationBody is null!");
-                    positions[i] = 0.0; // Default to 0 if joint is missing
+                    positions[i] = 0.0;
                 }
             }
-            
-            // Debug log to verify joint positions
-            Debug.Log($"Current joint positions (rad): [{string.Join(", ", positions.Select(p => p.ToString("F3")))}]");
             
             return positions;
         }
@@ -455,60 +450,11 @@ namespace Unity.Robotics.PickAndPlace
             }
         }
 
-        PoseMsg GetPoseMsg(Transform transform)
-        {
-            var pose = new PoseMsg();
-            
-            var relativePosition = transform.position - m_PandaRobot.transform.position;
-            pose.position = relativePosition.To<FLU>();
-            pose.orientation = transform.rotation.To<FLU>();
-
-            return pose;
-        }
-
-        /// <summary>
-        ///     Get the end-effector transform for the panda_manipulator group
-        /// </summary>
         Transform GetEndEffectorTransform()
         {
-            // Try to find the TCP (Tool Center Point) of the panda_manipulator group
-            var endEffector = m_PandaRobot.transform.Find("world/panda_link0/panda_link1/panda_link2/panda_link3/panda_link4/panda_link5/panda_link6/panda_link7/panda_link8/panda_hand/panda_hand_tcp");
-            
-            if (endEffector != null)
-                return endEffector;
-            
-            // Fallback to panda_hand if panda_hand_tcp not found
-            endEffector = m_PandaRobot.transform.Find("world/panda_link0/panda_link1/panda_link2/panda_link3/panda_link4/panda_link5/panda_link6/panda_link7/panda_link8/panda_hand");
-            
-            if (endEffector != null)
-                return endEffector;
-            
-            // Final fallback to panda_link8 (panda_arm group tip)
-            endEffector = m_PandaRobot.transform.Find("world/panda_link0/panda_link1/panda_link2/panda_link3/panda_link4/panda_link5/panda_link6/panda_link7/panda_link8");
-            
-            return endEffector;
+            return m_PandaRobot.transform.Find("world/panda_link0/panda_link1/panda_link2/panda_link3/panda_link4/panda_link5/panda_link6/panda_link7/panda_link8/panda_hand/panda_hand_tcp");
         }
 
-        /// <summary>
-        ///     Reset the pick and place state
-        /// </summary>
-        public void ResetPickAndPlace()
-        {
-            m_IsExecutingTrajectory = false;
-            m_IsPickAndPlaceComplete = false;
-            if (m_Target != null)
-            {
-                m_Target.transform.SetParent(null);
-            }
-            // Open gripper when resetting
-            MoveGripper(m_GripperOpenPosition, m_GripperOpenPosition);
-        }
-
-        /// <summary>
-        ///     Move the Panda gripper to specified positions
-        /// </summary>
-        /// <param name="leftTarget">Target position for left gripper</param>
-        /// <param name="rightTarget">Target position for right gripper</param>
         public void MoveGripper(float leftTarget, float rightTarget)
         {
             if (m_LeftGripper != null && m_RightGripper != null)
@@ -524,29 +470,18 @@ namespace Unity.Robotics.PickAndPlace
             }
         }
 
-        // Public methods for UI
-        public void SetTarget(GameObject target) => m_Target = target;
-        public void SetTargetPlacement(GameObject target) => m_TargetPlacement = target;
-
-        /// <summary>
-        ///     Calculate pick orientation based on cube's orientation for optimal grip alignment
-        /// </summary>
-        /// <param name="targetTransform">The transform of the target object to pick</param>
-        /// <returns>Quaternion representing the optimal pick orientation</returns>
         Quaternion GetPickOrientation(Transform targetTransform)
         {
             if (targetTransform == null)
                 return m_BaseGripperOrientation;
 
-            // Snap cube rotation to nearest 90-degree increment for consistent grip alignment
             var cubeYRotation = targetTransform.rotation.eulerAngles.y;
             var snappedYRotation = Mathf.Round(cubeYRotation / 90f) * 90f;
-
-            var gripperYaw = (snappedYRotation) % 360f;
-            
-            Debug.Log($"Cube Y: {cubeYRotation:F1}°, Snapped: {snappedYRotation:F1}°, Gripper Yaw: {gripperYaw:F1}°");
+            var gripperYaw = snappedYRotation % 360f;
             
             return Quaternion.Euler(180, gripperYaw, 0);
         }
+        
+        #endregion
     }
 }

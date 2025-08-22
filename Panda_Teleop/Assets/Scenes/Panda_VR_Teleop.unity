@@ -3471,7 +3471,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1323236408}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: GraphController, Unity.Robotics.PickAndPlace
         m_MethodName: OnSaveSpikeClicked
         m_Mode: 1
@@ -10357,7 +10357,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 686459050}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f1e7249f3e88074198659c2495417a1, type: 3}
   m_Name: 
@@ -16762,7 +16762,6 @@ GameObject:
   - component: {fileID: 1323236405}
   - component: {fileID: 1323236406}
   - component: {fileID: 1323236407}
-  - component: {fileID: 1323236408}
   m_Layer: 0
   m_Name: UI
   m_TagString: Untagged
@@ -16852,30 +16851,6 @@ MonoBehaviour:
   sizeSlider: {fileID: 699913004}
   textureDropdown: {fileID: 807411221}
   participantName: P01
---- !u!114 &1323236408
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1323236402}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11db112738903524694b2a0ce3ffd766, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  graphImage: {fileID: 192369920}
-  graphColor: {r: 0.098039225, g: 0.09019608, b: 0.20784315, a: 0.5882353}
-  graphSpeed: 10
-  graphHeight: 100
-  noiseAmount: 5
-  spikeChance: 0.01
-  minSpikeHeight: 20
-  maxSpikeHeight: 50
-  baselinePosition: 0.15
-  spikesOccurred: 0
-  spikesSaved: 0
-  databaseManager: {fileID: 1323236407}
 --- !u!1 &1335791189
 GameObject:
   m_ObjectHideFlags: 0
@@ -21618,7 +21593,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1619856113
 RectTransform:
   m_ObjectHideFlags: 0
@@ -24388,7 +24363,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1902254954}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b7bd9fb65847b54fb39f64a5b87edaa, type: 3}
   m_Name: 
