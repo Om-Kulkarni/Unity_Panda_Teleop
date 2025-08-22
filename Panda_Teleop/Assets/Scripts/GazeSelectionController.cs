@@ -1,146 +1,399 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
-using UnityEngine.InputSystem;
-using Unity.Robotics.ROSTCPConnector.MessageGeneration;
-using UnityEngine.XR.Interaction.Toolkit;
-using Unity.Robotics.PickAndPlace;
-using UnityEngine.UI;
 
-/// <summary>
-/// Manages the pick-and-place selection process using eye-gaze.
-/// This script acts as a state machine to guide the user through the selection process.
-/// 1. Awaits selection of a source object ("Target" tag).
-/// 2. Awaits selection of a destination object ("TargetPlacement" tag).
-/// 3. Triggers the PandaTrajectoryPlanner to execute the robot's movement.
-/// </summary>
-///
+using UnityEngine.InputSystem;
+
+using Unity.Robotics.PickAndPlace;
+
 
 public class GazeSelectionController : MonoBehaviour
+
 {
-    // --- Public References to be set in the Inspector ---
+
     [Header("Core Components")]
+
     [Tooltip("Reference to the CustomGazeInteractor script on your Main Camera.")]
+
     public CustomGazeInteractor gazeInteractor;
+
     [Tooltip("Reference to the PandaTrajectoryPlanner script in the scene.")]
+
     public PandaTrajectoryPlanner pandaTrajectoryPlanner;
 
+
     [Header("Input Action")]
+
     [Tooltip("The Input Action to trigger a selection (e.g., a controller button).")]
+
     public InputActionReference selectInputAction;
 
-    // --- State Machine Variables ---
+
     private enum SelectionState { AwaitingSource, AwaitingDestination }
+
     private SelectionState currentState = SelectionState.AwaitingSource;
 
+
     private Transform selectedSource = null;
+
     private Transform selectedDestination = null;
 
+
+
+    private ObjectGlower activeSourceGlower = null;
+
+    private ObjectGlower activeDestinationGlower = null;
+
+
+    //-- NEW --//
+
+    // Flags to ensure each error only happens once per session.
+
+    private bool hasLightPurpleErrorOccurred = false;
+
+    private bool hasLightGreenErrorOccurred = false;
+
+
     private void OnEnable()
+
     {
-        // Enable the input action when this script is enabled
+
         selectInputAction.action.Enable();
+
         selectInputAction.action.performed += OnSelectPerformed;
+
     }
+
 
     private void OnDisable()
+
     {
-        // Disable the input action when this script is disabled
+
         selectInputAction.action.performed -= OnSelectPerformed;
+
         selectInputAction.action.Disable();
+
     }
 
-    /// <summary>
-    /// This method is called every time the 'selectInputAction' is performed (e.g., button press).
-    /// </summary>
-    ///
-    private void OnSelectPerformed(InputAction.CallbackContext context)
-    {
-        // // Get the first interactable the gaze is hovering over, or null if there are none.
-        // IXRHoverInteractable firstInteractable = gazeInteractor.interactablesHovered.FirstOrDefault();
 
-        // // Get the GameObject from that interactable.
-        // GameObject hoveredObject = firstInteractable != null ? (firstInteractable as MonoBehaviour).gameObject : null;
+    private void OnSelectPerformed(InputAction.CallbackContext context)
+
+    {
 
         GameObject hoveredObject = gazeInteractor.GetHoveredObject();
 
-        // If no object is hovered, do nothing.
         if (hoveredObject == null) { return; }
 
-        // -- State Machine Logic --
-        // Check the current state and handle the selection accordingly.
+
         if (currentState == SelectionState.AwaitingSource)
+
         {
-            // Check if the robot is currently busy executing a trajectory
+
             if (!CanStartNewSelection())
+
             {
-                Debug.Log("Robot is currently busy. Please wait for the current operation to complete.");
+
+                Debug.Log("Robot is currently busy. Please wait.");
+
                 return;
+
             }
 
-            // If we are waiting for a source, check if the object has the corect tag.
+
+
+            ClearPreviousSelectionGlows();
+
+
             if (hoveredObject.CompareTag("Target"))
+
             {
-                // Store the selected source object and update the state.
-                selectedSource = hoveredObject.transform;
-                currentState = SelectionState.AwaitingDestination;
-                // Optionally, you can provide feedback to the user.
-                Debug.Log("Source selected: " + selectedSource.name);
-            }
-        }
-        else if (currentState == SelectionState.AwaitingDestination)
-        {
-            // If we are waiting for a destination, check if the object has the correct tag.
-            if (hoveredObject.CompareTag("TargetPlacement"))
-            {
-                // Check if the robot is currently busy executing a trajectory
-                if (!CanStartNewSelection())
+
+                //-- ERROR INJECTION START --//
+
+                Renderer selectedRenderer = hoveredObject.GetComponent<Renderer>();
+
+                if (selectedRenderer != null)
+
                 {
-                    Debug.Log("Robot is currently busy. Please wait for the current operation to complete.");
-                    return;
+
+                    string materialName = selectedRenderer.material.name;
+
+
+                    //-- MODIFIED --//
+
+                    // ERROR 1: If user selects "light purple" for the FIRST TIME, swap it for "pink".
+
+                    if (materialName.Contains("Light Purple") && !hasLightPurpleErrorOccurred)
+
+                    {
+
+                        Debug.LogWarning("FIRST TIME ERROR TRIGGERED: Light purple cube selected. Swapping to pink cube.");
+
+                        HandleLightPurpleError();
+
+                        return; // Exit after handling the error
+
+                    }
+
+
+                    //-- MODIFIED --//
+
+                    // ERROR 2: If user selects "Light Green" for the FIRST TIME, force destination to "PlacementArea_7".
+
+                    if (materialName.Contains("Light Green") && !hasLightGreenErrorOccurred)
+
+                    {
+
+                        Debug.LogWarning("FIRST TIME ERROR TRIGGERED: Light green cube selected. Overriding destination.");
+
+                        HandleLightGreenError(hoveredObject.transform);
+
+                        return; // Exit after handling the error
+
+                    }
+
                 }
 
-                // Store the selected destination object and update the state.
+                //-- ERROR INJECTION END --//
+
+
+
+                // This is the original, correct behavior
+
+                selectedSource = hoveredObject.transform;
+
+                currentState = SelectionState.AwaitingDestination;
+
+                Debug.Log("Source selected: " + selectedSource.name);
+
+
+
+                activeSourceGlower = selectedSource.GetComponent<ObjectGlower>();
+
+                if (activeSourceGlower != null)
+
+                {
+
+                    activeSourceGlower.SetGlow(true);
+
+                }
+
+            }
+
+        }
+
+        else if (currentState == SelectionState.AwaitingDestination)
+
+        {
+
+            if (hoveredObject.CompareTag("TargetPlacement"))
+
+            {
+
+                if (!CanStartNewSelection())
+
+                {
+
+                    Debug.Log("Robot is currently busy. Please wait.");
+
+                    return;
+
+                }
+
+
                 selectedDestination = hoveredObject.transform;
+
                 Debug.Log("Destination selected: " + selectedDestination.name);
 
-                // Assign our selected objects to the public properties of the Panda trajectory planner script
+
+
+                activeDestinationGlower = selectedDestination.GetComponent<ObjectGlower>();
+
+                if (activeDestinationGlower != null)
+
+                {
+
+                    activeDestinationGlower.SetGlow(true);
+
+                }
+
+
                 pandaTrajectoryPlanner.Target = selectedSource.gameObject;
+
                 pandaTrajectoryPlanner.TargetPlacement = selectedDestination.gameObject;
 
-                // Call the method to execute the pick and place operation
                 pandaTrajectoryPlanner.ExecutePickAndPlace();
 
-                // Reset the state machine for the next selection.
-                ResetSelection();
+
+
+                currentState = SelectionState.AwaitingSource;
+
+                selectedSource = null;
+
+                selectedDestination = null;
+
             }
+
+            else if (hoveredObject.CompareTag("Target"))
+
+            {
+
+                Debug.Log("New source selected, resetting previous choice.");
+
+                ResetSelection();
+
+                OnSelectPerformed(context);
+
+                return;
+
+            }
+
+        }
+
+    }
+
+
+
+    //-- ERROR INJECTION START --//
+
+    private void HandleLightPurpleError()
+
+    {
+
+        GameObject pinkCube = null;
+
+        GameObject[] allTargets = GameObject.FindGameObjectsWithTag("Target");
+
+        foreach (var target in allTargets)
+
+        {
+
+            Renderer r = target.GetComponent<Renderer>();
+
+            if (r != null && r.material.name.Contains("Pink"))
+
+            {
+
+                pinkCube = target;
+
+                break;
+
+            }
+
+        }
+
+
+        if (pinkCube != null)
+
+        {
+
+            selectedSource = pinkCube.transform;
+
+            currentState = SelectionState.AwaitingDestination;
+
+            Debug.Log("ERROR APPLIED: Source selection swapped to: " + selectedSource.name);
+
+
+
+            activeSourceGlower = selectedSource.GetComponent<ObjectGlower>();
+
+            if (activeSourceGlower != null)
+
+            {
+
+                activeSourceGlower.SetGlow(true);
+
+            }
+
+
+
+            //-- NEW --//
+
+            // Set the flag so this error doesn't happen again.
+
+            hasLightPurpleErrorOccurred = true;
+
+        }
+
+        else
+
+        {
+
+            Debug.LogError("ERROR FAILED: Could not find a 'pink' cube in the scene to swap to.");
+
+            ResetSelection();
+
+        }
+
+    }
+
+
+
+    private void HandleLightGreenError(Transform sourceSelection)
+    {
+        GameObject destinationOverride = GameObject.Find("TargetPlacement (7)");
+
+        if (destinationOverride != null)
+        {
+            selectedSource = sourceSelection;
+            selectedDestination = destinationOverride.transform;
+
+            Debug.Log("ERROR APPLIED: Destination for '" + selectedSource.name + "' has been forced to '" + selectedDestination.name + "'.");
+
+            activeSourceGlower = selectedSource.GetComponent<ObjectGlower>();
+
+            if (activeSourceGlower != null) activeSourceGlower.SetGlow(true);
+
+            activeDestinationGlower = selectedDestination.GetComponent<ObjectGlower>();
+
+            if (activeDestinationGlower != null) activeDestinationGlower.SetGlow(true);
+            pandaTrajectoryPlanner.Target = selectedSource.gameObject;
+            pandaTrajectoryPlanner.TargetPlacement = selectedDestination.gameObject;
+            pandaTrajectoryPlanner.ExecutePickAndPlace();
+            currentState = SelectionState.AwaitingSource;
+            selectedSource = null;
+            selectedDestination = null;
+            //-- NEW --//
+            // Set the flag so this error doesn't happen again.
+            hasLightGreenErrorOccurred = true;
+        }
+        else
+        {
+            Debug.LogError("ERROR FAILED: Could not find a GameObject named 'PlacementArea_7' in the scene.");
+            ResetSelection();
         }
     }
 
-    /// <summary>
-    /// Resets the state machine back to its initial state.
-    /// </summary>
-    ///
+    //-- ERROR INJECTION END --//
+    private void ClearPreviousSelectionGlows()
+    {
+        if (activeSourceGlower != null)
+        {
+            activeSourceGlower.SetGlow(false);
+            activeSourceGlower = null;
+        }
+
+        if (activeDestinationGlower != null)
+        {
+            activeDestinationGlower.SetGlow(false);
+            activeDestinationGlower = null;
+        }
+    }
+
     private void ResetSelection()
     {
         currentState = SelectionState.AwaitingSource;
         selectedSource = null;
         selectedDestination = null;
-        // Optionally, you can provide feedback to the user.
+
+        if (activeSourceGlower != null)
+        {
+            activeSourceGlower.SetGlow(false);
+            activeSourceGlower = null;
+        }
         Debug.Log("Selection reset. Awaiting new source selection.");
     }
 
-    /// <summary>
-    /// Check if we can start a new selection (robot is not busy)
-    /// </summary>
     private bool CanStartNewSelection()
     {
-        if (pandaTrajectoryPlanner.IsExecutingTrajectory)
-        {
-            // Could add UI feedback here in the future
-            return false;
-        }
-        return true;
+        return !pandaTrajectoryPlanner.IsExecutingTrajectory;
     }
 }
