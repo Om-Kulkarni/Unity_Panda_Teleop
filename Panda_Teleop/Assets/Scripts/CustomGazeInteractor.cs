@@ -113,12 +113,12 @@ public class CustomGazeInteractor : MonoBehaviour
 
     private void UpdateVisuals(Vector3 startPoint, Vector3 endPoint, Vector3 normal)
     {
-        // Update the Line Renderer
-        if (gazeRayLine != null)
-        {
-            gazeRayLine.SetPosition(0, startPoint);
-            gazeRayLine.SetPosition(1, endPoint);
-        }
+        // // Update the Line Renderer
+        // if (gazeRayLine != null)
+        // {
+        //     gazeRayLine.SetPosition(0, startPoint);
+        //     gazeRayLine.SetPosition(1, endPoint);
+        // }
 
         // Update the Gaze Visualizer Sphere
         if (gazeVisualizer != null)

@@ -8886,10 +8886,11 @@ MonoBehaviour:
   m_PandaRobot: {fileID: 9793566}
   m_Target: {fileID: 969836342}
   m_TargetPlacement: {fileID: 1469635121}
+  m_PlanningGroup: panda_manipulator
   m_SpeedFactor: 0.5
   m_PickOffsetHeight: 0
   m_GripperTcpOffset: 0.05
-  m_PlanningGroup: panda_manipulator
+  m_PostPlaceLiftHeight: 0.1
   m_GripperOpenPosition: 0.04
   m_GripperClosedPosition: 0.005
 --- !u!1 &602983062
@@ -10357,7 +10358,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 686459050}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f1e7249f3e88074198659c2495417a1, type: 3}
   m_Name: 
@@ -24363,7 +24364,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1902254954}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b7bd9fb65847b54fb39f64a5b87edaa, type: 3}
   m_Name: 
@@ -24378,7 +24379,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1902254954}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6fbe145bad1c8a1469a8c5bcaa89e12a, type: 3}
   m_Name: 
