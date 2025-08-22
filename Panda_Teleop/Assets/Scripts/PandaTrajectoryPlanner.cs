@@ -281,6 +281,38 @@ namespace Unity.Robotics.PickAndPlace
 
                 // All trajectories have been executed, open the gripper to place the target cube
                 yield return StartCoroutine(HandleGripperAction(false));
+
+                // After placing, move up by adjusting joint 2 and 3 to lift the end effector
+                var currentJoints = GetCurrentJointPositions();
+                
+                // Create a simple trajectory point to move joints 1 and 2 to lift the end effector
+                var liftTrajectory = new RobotTrajectoryMsg
+                {
+                    joint_trajectory = new JointTrajectoryMsg
+                    {
+                        points = new[]
+                        {
+                            new JointTrajectoryPointMsg
+                            {
+                                positions = currentJoints.Select((pos, index) =>
+                                {
+                                    // Adjust joint 1 (shoulder) and joint 2 (elbow) to create upward motion
+                                    if (index == 1)
+                                        return pos - 0.2; // Decrease shoulder angle
+                                    else if (index == 2)
+                                        return pos + 0.2; // Increase elbow angle
+                                    return pos; // Keep other joints the same
+                                }).ToArray()
+                            }
+                        }
+                    }
+                };
+
+                // Execute the lift trajectory
+                yield return StartCoroutine(ExecuteTrajectory(liftTrajectory));
+                
+                // Wait a moment for the movement to complete
+                yield return new WaitForSeconds(0.5f / m_SpeedFactor);
             }
         }
         
