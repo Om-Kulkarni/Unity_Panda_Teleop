@@ -16763,7 +16763,6 @@ GameObject:
   - component: {fileID: 1323236406}
   - component: {fileID: 1323236407}
   - component: {fileID: 1323236408}
-  - component: {fileID: 1323236409}
   m_Layer: 0
   m_Name: UI
   m_TagString: Untagged
@@ -16877,28 +16876,6 @@ MonoBehaviour:
   spikesOccurred: 0
   spikesSaved: 0
   databaseManager: {fileID: 1323236407}
---- !u!114 &1323236409
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1323236402}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2dd18b2be7a8de247bc84cfc9fe17201, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gridImages:
-  - {fileID: 154214957}
-  - {fileID: 1357692717}
-  - {fileID: 253797775}
-  - {fileID: 681505867}
-  - {fileID: 446198688}
-  - {fileID: 1976912092}
-  - {fileID: 200646044}
-  - {fileID: 448073782}
-  - {fileID: 634998651}
 --- !u!1 &1335791189
 GameObject:
   m_ObjectHideFlags: 0
