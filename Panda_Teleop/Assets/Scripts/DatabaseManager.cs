@@ -31,8 +31,6 @@ public class TrialData
 public class SessionData
 {
     // Session-wide data
-    public int totalSpikesOccurred;
-    public int totalSpikesSaved;
     public float totalSessionTimeSeconds;
 
     // List of individual trial data
@@ -160,20 +158,6 @@ public class DatabaseManager : MonoBehaviour
 
         // Reset the active trial to null, ready for the next cycle
         activeTrial = null;
-    }
-
-    /// <summary>
-    /// STEP 3: Called by GraphController when the game stops.
-    /// Updates the spike counts in the existing JSON file.
-    /// </summary>
-    public void UpdateSessionSpikeCounts(int occurredCount, int savedCount)
-    {
-        SessionData sessionData = LoadSessionData(); // Load whatever data already exists
-        sessionData.totalSpikesOccurred = occurredCount;
-        sessionData.totalSpikesSaved = savedCount;
-        SaveSessionData(sessionData); // Save the updated object back to the file
-
-        Debug.Log("Updated session spike counts in JSON file.");
     }
 
     // HELPER METHODS to reduce code duplication 

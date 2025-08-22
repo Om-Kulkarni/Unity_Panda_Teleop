@@ -118,12 +118,6 @@ public class GraphController : MonoBehaviour
     // This function is called when the object is destroyed, including when the game stops.
     private void OnDestroy()
     {
-        // Check if the database manager was found before trying to use it
-        if (databaseManager != null)
-        {
-            Debug.Log($"Saving spike data: Occurred={spikesOccurred}, Saved={spikesSaved}");
-            databaseManager.UpdateSessionSpikeCounts(spikesOccurred, spikesSaved);
-        }
     }
 
     // Clears the texture to a transparent color
