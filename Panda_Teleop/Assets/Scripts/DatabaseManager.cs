@@ -156,6 +156,11 @@ public class DatabaseManager : MonoBehaviour
 
         Debug.Log($"Successfully saved complete data for trial ID: {activeTrial.trialId}");
 
+        // Reset UI elements to default values
+        colorDisplay.color = Color.white;  // Reset color to white
+        sizeSlider.value = 0.02f;         // Reset size to 0.02
+        textureDropdown.value = 0;        // Reset to first option (assuming "Rough" is first)
+
         // Reset the active trial to null, ready for the next cycle
         activeTrial = null;
     }
