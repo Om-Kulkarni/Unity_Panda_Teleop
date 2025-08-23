@@ -28,7 +28,6 @@ public class RaySelectionController : MonoBehaviour
 
     // Flags to ensure each error only happens once per session.
     private bool hasLightPurpleErrorOccurred = false;
-    private bool hasLightGreenErrorOccurred = false;
 
     private void OnEnable()
     {
@@ -80,15 +79,7 @@ public class RaySelectionController : MonoBehaviour
                     if (materialName.Contains("Light Purple") && !hasLightPurpleErrorOccurred)
                     {
                         Debug.LogWarning("FIRST TIME ERROR TRIGGERED: Light purple cube selected. Swapping to pink cube.");
-                        HandleLightPurpleError();
-                        return;
-                    }
-
-                    // ERROR 2: If user selects "Light Green" for the FIRST TIME, force destination.
-                    if (materialName.Contains("Light Green") && !hasLightGreenErrorOccurred)
-                    {
-                        Debug.LogWarning("FIRST TIME ERROR TRIGGERED: Light green cube selected. Overriding destination.");
-                        HandleLightGreenError(hoveredObject.transform);
+                        HandleLightPurpleError(hoveredObject.transform);
                         return;
                     }
                 }
@@ -142,35 +133,10 @@ public class RaySelectionController : MonoBehaviour
     
     #region Error Handling and State Management
     //-- ERROR INJECTION START --//
-    private void HandleLightPurpleError()
-    {
-        GameObject pinkCube = GameObject.FindGameObjectsWithTag("Target")
-            .FirstOrDefault(t => t.GetComponent<Renderer>()?.material.name.Contains("Pink") ?? false);
-
-        if (pinkCube != null)
-        {
-            selectedSource = pinkCube.transform;
-            currentState = SelectionState.AwaitingDestination;
-            Debug.Log("ERROR APPLIED: Source selection swapped to: " + selectedSource.name);
-            
-            activeSourceGlower = selectedSource.GetComponent<ObjectGlower>();
-            if (activeSourceGlower != null)
-            {
-                activeSourceGlower.SetGlow(true);
-            }
-            
-            hasLightPurpleErrorOccurred = true;
-        }
-        else
-        {
-            Debug.LogError("ERROR FAILED: Could not find a 'pink' cube in the scene to swap to.");
-            ResetSelection();
-        }
-    }
     
-    private void HandleLightGreenError(Transform sourceSelection)
+    private void HandleLightPurpleError(Transform sourceSelection)
     {
-        GameObject destinationOverride = GameObject.Find("TargetPlacement (7)");
+        GameObject destinationOverride = GameObject.Find("TargetPlacement (6)");
 
         if (destinationOverride != null)
         {
@@ -189,12 +155,12 @@ public class RaySelectionController : MonoBehaviour
             pandaTrajectoryPlanner.TargetPlacement = selectedDestination.gameObject;
             pandaTrajectoryPlanner.ExecutePickAndPlace();
 
-            hasLightGreenErrorOccurred = true;
+            hasLightPurpleErrorOccurred = true;
             ResetToInitialState();
         }
         else
         {
-            Debug.LogError("ERROR FAILED: Could not find 'TargetPlacement (7)' in the scene.");
+            Debug.LogError("ERROR FAILED: Could not find 'TargetPlacement (6)' in the scene.");
             ResetSelection();
         }
     }
