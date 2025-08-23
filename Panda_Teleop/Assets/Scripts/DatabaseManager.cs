@@ -16,12 +16,12 @@ public class TrialData
 
     // Ground Truth (captured when robot picks up the cube)
     public Color trueColor;
-    public Vector3 trueSize;
+    public string trueSize;  // Changed to string to store "small", "medium", or "large"
     public string trueTexture;
 
     // User Selection (captured when user clicks 'Save')
     public Color userSelectedColor;
-    public float userSelectedSize;
+    public string userSelectedSize;  // Changed to string to store "small", "medium", or "large"
     public string userSelectedTexture;
 }
 
@@ -41,8 +41,33 @@ public class DatabaseManager : MonoBehaviour
 {
     [Header("UI References")]
     public Image colorDisplay;
-    public Slider sizeSlider;
+    public TMP_Dropdown sizeDropdown;  // Changed from Slider to Dropdown for size categories
     public TMP_Dropdown textureDropdown;
+
+    // Size category thresholds
+    private const float SMALL_SIZE = 0.03f;
+    private const float MEDIUM_SIZE = 0.04f;
+    private const float LARGE_SIZE = 0.05f;
+
+    // Helper method to convert actual size to category
+    private string SizeToCategory(float size)
+    {
+        if (size <= SMALL_SIZE) return "small";
+        if (size <= MEDIUM_SIZE) return "medium";
+        return "large";
+    }
+
+    // Helper method to convert category to actual size
+    private float CategoryToSize(string category)
+    {
+        switch (category.ToLower())
+        {
+            case "small": return SMALL_SIZE;
+            case "medium": return MEDIUM_SIZE;
+            case "large": return LARGE_SIZE;
+            default: return MEDIUM_SIZE;
+        }
+    }
 
     [Header("File Naming")]
     public string participantName = "P01";  // Default value, can be changed in Inspector
@@ -109,7 +134,7 @@ public class DatabaseManager : MonoBehaviour
 
             // Populate ground truth fields
             trueColor = cubeMaterial.color,
-            trueSize = groundTruthCube.transform.localScale,
+            trueSize = SizeToCategory(groundTruthCube.transform.localScale.x),  // Convert actual size to category
             trueTexture = textureName
         };
 
@@ -137,7 +162,7 @@ public class DatabaseManager : MonoBehaviour
 
         // Populate the user selection fields of the active trial
         activeTrial.userSelectedColor = colorDisplay.color;
-        activeTrial.userSelectedSize = sizeSlider.value;
+        activeTrial.userSelectedSize = sizeDropdown.options[sizeDropdown.value].text.ToLower();  // Get selected size category
         activeTrial.userSelectedTexture = textureDropdown.options[textureDropdown.value].text;
 
         // --- Now, save the completed trial data to the file ---
@@ -158,7 +183,7 @@ public class DatabaseManager : MonoBehaviour
 
         // Reset UI elements to default values
         colorDisplay.color = Color.white;  // Reset color to white
-        sizeSlider.value = 0.02f;         // Reset size to 0.02
+        sizeDropdown.value = 0;           // Reset size to first option (small)
         textureDropdown.value = 0;        // Reset to first option (assuming "Rough" is first)
 
         // Reset the active trial to null, ready for the next cycle
