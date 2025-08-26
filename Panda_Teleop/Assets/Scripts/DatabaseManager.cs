@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 
 // A single, unified class to hold all data for one trial.
@@ -79,9 +80,20 @@ public class DatabaseManager : MonoBehaviour
     private float trialStartTime; // Time when the current cube was picked up.
     private float sessionStartTime; // Time when the VERY FIRST cube was picked up.
 
+    private string dataFolderPath;
+
     void Awake()
     {
         saveFileName = $"{participantName}_TrialData_{DateTime.Now:yyyy-MM-dd_HH-mm}.json";
+        
+        // Set up the data folder path in the workspace root
+        dataFolderPath = Path.Combine(Application.dataPath, "../../data");
+        
+        // Create the data directory if it doesn't exist
+        if (!Directory.Exists(dataFolderPath))
+        {
+            Directory.CreateDirectory(dataFolderPath);
+        }
     }
 
     /// <summary>
@@ -166,7 +178,7 @@ public class DatabaseManager : MonoBehaviour
         activeTrial.userSelectedTexture = textureDropdown.options[textureDropdown.value].text;
 
         // --- Now, save the completed trial data to the file ---
-        string filePath = Path.Combine(Application.persistentDataPath, saveFileName);
+        string filePath = Path.Combine(dataFolderPath, saveFileName);
         SessionData dataList = new SessionData();
 
         if (File.Exists(filePath))
@@ -193,7 +205,7 @@ public class DatabaseManager : MonoBehaviour
     // HELPER METHODS to reduce code duplication 
     private SessionData LoadSessionData()
     {
-        string filePath = Path.Combine(Application.persistentDataPath, saveFileName);
+        string filePath = Path.Combine(dataFolderPath, saveFileName);
         if (File.Exists(filePath))
         {
             string json = File.ReadAllText(filePath);
@@ -204,7 +216,7 @@ public class DatabaseManager : MonoBehaviour
 
     private void SaveSessionData(SessionData data)
     {
-        string filePath = Path.Combine(Application.persistentDataPath, saveFileName);
+        string filePath = Path.Combine(dataFolderPath, saveFileName);
         string updatedJson = JsonUtility.ToJson(data, true);
         File.WriteAllText(filePath, updatedJson);
     }
