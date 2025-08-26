@@ -8930,7 +8930,6 @@ GameObject:
   m_Component:
   - component: {fileID: 602983063}
   - component: {fileID: 602983065}
-  - component: {fileID: 602983066}
   m_Layer: 0
   m_Name: TargetCubes
   m_TagString: Untagged
@@ -8984,19 +8983,6 @@ MonoBehaviour:
   - '#FFFFFF'
   - '#808080'
   - '#000000'
---- !u!114 &602983066
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 602983062}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86af35bb654b5e44cafd27e335fe97b2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  glowColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
 --- !u!1001 &609183772
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16267,7 +16253,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1323236402}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0adc806ed5ab65e4a9ea7d7ea5f1c233, type: 3}
   m_Name: 
@@ -16290,7 +16276,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   colorDisplay: {fileID: 1295919591}
-  sizeSlider: {fileID: 699913004}
+  sizeDropdown: {fileID: 105336000}
   textureDropdown: {fileID: 807411221}
   participantName: P01
 --- !u!1 &1335791189
