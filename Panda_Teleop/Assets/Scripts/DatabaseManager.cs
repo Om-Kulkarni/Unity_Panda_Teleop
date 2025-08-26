@@ -159,6 +159,11 @@ public class DatabaseManager : MonoBehaviour
     /// </summary>
     public void ConfirmAndSaveData()
     {
+        // Reset UI elements to default values
+        colorDisplay.color = Color.white;  // Reset color to white
+        sizeDropdown.value = 0;           // Reset size to first option (small)
+        textureDropdown.value = 0;        // Reset to first option (assuming "Rough" is first)
+
         // Check if a cube has been picked up first
         if (activeTrial == null)
         {
@@ -192,11 +197,6 @@ public class DatabaseManager : MonoBehaviour
         File.WriteAllText(filePath, updatedJson);
 
         Debug.Log($"Successfully saved complete data for trial ID: {activeTrial.trialId}");
-
-        // Reset UI elements to default values
-        colorDisplay.color = Color.white;  // Reset color to white
-        sizeDropdown.value = 0;           // Reset size to first option (small)
-        textureDropdown.value = 0;        // Reset to first option (assuming "Rough" is first)
 
         // Reset the active trial to null, ready for the next cycle
         activeTrial = null;
