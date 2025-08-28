@@ -1,23 +1,51 @@
 # Unity_Panda_Teleop
 A VR teleoperation project for the Franka Emika Panda robot using Unity and ROS. This project enables real-time control of the Panda robot's end-effector through VR controllers with full 6DOF (position and orientation) manipulation.
 
-A demonstration video of the Panda VR Teleoperation system is available below:
 
-## Panda VR Teleoperation Demo
+A demonstration video of the Franka Eye Tracking system is available below:
 
-**Watch the Panda VR Teleoperation demo:**
+## Franka Eye Tracking Demo
 
+**Watch the Franka Eye Tracking demo:**
 
 If the video does not play in your browser, right-click the link above and choose "Save link as..." to download.
 <p align="center">
-  <img src="files/Franka_VR_Teleop.gif" alt="Panda VR Teleop Demo GIF" width="480" />
+   <video width="480" controls>
+      <source src="files/Franka_Eye_tracking.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+   </video>
 </p>
 
-[▶️ Click here to download the full demo video (MP4)](files/Franka_VR_Teleop.mp4)
+[▶️ Click here to download the full eye tracking demo video (MP4)](files/Franka_Eye_tracking.mp4)
 
 For higher quality or sound, download the MP4 video above.
 
 ## Features
+## Unity and ROS Script Overview
+
+### Unity Scripts (`Panda_Teleop/Assets/Scripts/`)
+- **PandaVRTeleoperator.cs**: Main VR teleoperation script. Handles VR input, ROS communication, gripper control, and end-effector manipulation.
+- **PandaTrajectoryPlanner.cs**: Plans robot trajectories using MoveIt via ROS. Supports pick-and-place and lift movements.
+- **PandaMovetoPoint.cs**: Moves the robot to a target point using ROS services. Handles joint initialization and service calls.
+- **ObjectGlower.cs**: Controls emission glow of objects for visual feedback during selection.
+- **MenuManager.cs**: Manages UI panels for the main menu and database interactions.
+- **RaySelectionController.cs**: Handles selection of source/destination objects using XR Ray Interactor and provides error feedback.
+- **GazeSelectionController.cs**: Enables gaze-based selection using a custom gaze interactor and provides error feedback.
+- **FrankaStatePublisher.cs**: Publishes robot joint states to ROS for synchronization and monitoring.
+<!-- Additional scripts exist for UI, data management, and interaction logic. -->
+
+### ROS Scripts (`ROS/src/panda_moveit/scripts/`)
+- **panda_teleop_server.py**: Real-time IK solver service for VR teleoperation. Uses MoveIt to solve inverse kinematics and respond to Unity requests.
+- **panda_mover.py**: Legacy pick-and-place service for trajectory planning and execution. Supports advanced constraints and error handling.
+- **panda_unity_joint_state_publisher.py**: Publishes joint states from Unity to ROS for synchronization (not shown above, but present in repo).
+
+### ROS Message and Service Definitions
+- **PandaMoveitJoints.msg**: Defines joint state messages for Panda robot.
+- **PandaTrajectoryPlannerService.srv**: Service for trajectory planning requests.
+- **PandaMoverService.srv**: Service for pick-and-place operations.
+
+### Other Notable Scripts
+- Additional scripts exist for database management, UI control, gaze interaction, and feedback mechanisms. See the `Scripts/` folder for full details.
 - Real-time VR teleoperation of Franka Panda robot
 - Full 6DOF end-effector control (position + rotation)
 - MoveIt-based inverse kinematics solving
@@ -40,41 +68,78 @@ Unity_Panda_Teleop/
 │       ├── panda_moveit/     # Custom MoveIt integration package
 │       │   ├── scripts/
 │       │   │   ├── panda_mover.py        # Pick-and-place service (legacy)
+
+## Features
+- Real-time VR teleoperation of Franka Panda robot
+- Full 6DOF end-effector control (position + rotation)
+- MoveIt-based inverse kinematics solving
+- ROS 1 integration with Unity
+- Docker-based development environment
+- Smooth VR controller interaction with grab-and-move interface
+
+---
+
+## Quickstart
+
+1. **Clone the repository and required ROS packages** (see below)
+2. **Build the Docker image** for ROS Noetic and MoveIt
+3. **Start the Docker container** with GUI and port forwarding
+4. **Launch the teleoperation service** inside the container
+5. **Open Unity, configure VR, and press Play**
+
+---
 │       │   │   └── panda_teleop_server.py # Real-time IK solver service
 │       │   ├── srv/
+These scripts provide modular control, feedback, and interaction for VR teleoperation:
 │       │   │   ├── PandaMoverService.srv   # Pick-and-place service definition
 │       │   │   └── PandaIKSolver.srv       # Real-time IK service definition
+These Python scripts run inside the ROS Docker container and provide robot control services:
 │       │   ├── msg/
 │       │   │   └── PandaMoveitJoints.msg   # Joint state message
+Custom message and service types for Panda teleoperation:
 │       │   └── launch/
-│       │       └── panda_unity_integration.launch  # Streamlined launch file
-│       ├── panda_moveit_config/  # MoveIt configuration for Panda
-│       └── ros_tcp_endpoint/     # Unity-ROS communication bridge
-└── ros1_docker/              # ROS 1 Noetic Docker setup
-```
+### Other Notable Scripts
+- Additional scripts exist for database management, UI control, gaze interaction, and feedback mechanisms. See the `Scripts/` folder for full details.
 
-## How VR Teleoperation Works
+---
+
 
 ### Control Method
+
+---
+
+## How VR Teleoperation Works
 - **Grab Interface**: Use VR controllers to directly grab and move the robot's end-effector
 - **6DOF Control**: Full position (X, Y, Z) and rotation (Roll, Pitch, Yaw) control
+The system uses Unity XR for VR input and MoveIt for robot control. Key features:
 - **Real-time IK**: MoveIt solves inverse kinematics at 30Hz for smooth operation
 - **Collision Checking**: Optional collision detection during movement
+End-to-end data flow:
 
 ### Technical Flow
 ```
+
+---
+
 VR Controller Movement → Unity PandaVRTeleoperator → ROS TCP → panda_teleop_server → MoveIt IK Solver → Joint Commands → Robot Movement
 ```
 
+**Required:**
 ### Key Components
 1. **PandaVRTeleoperator.cs**: Unity script handling VR input and ROS communication
 2. **panda_teleop_server.py**: ROS service providing real-time IK solving
 3. **PandaIKSolver.srv**: Service definition for fast IK requests
 4. **MoveIt Integration**: Robust inverse kinematics and motion planning
 
+---
+
+
 ## Setup Instructions
 
 ### Prerequisites
+
+---
+
 - Docker Desktop with WSL2 backend
 - Unity 2022.3 LTS or later
 - VR headset compatible with Unity XR (Meta Quest, HTC Vive, etc.)
@@ -82,6 +147,9 @@ VR Controller Movement → Unity PandaVRTeleoperator → ROS TCP → panda_teleo
 - Windows 11 (for WSLg GUI support)
 
 ### Clone Required ROS Packages
+
+
+---
 
 Before building the Docker image, you need to clone the required ROS packages into your `ROS/src` directory:
 
@@ -93,6 +161,9 @@ cd ROS/src/
 git clone https://github.com/moveit/panda_moveit_config.git
 
 # Clone Unity ROS TCP Endpoint for Unity-ROS communication
+
+---
+
 git clone https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git ros_tcp_endpoint
 ```
 
@@ -100,7 +171,19 @@ git clone https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git ros_tcp_end
 
 ### Troubleshooting ROS TCP Endpoint
 
-**Line Ending Issues:**
+---
+
+## Best Practices & Tips
+
+- Always check Unity Console and ROS logs for errors.
+- Use the provided troubleshooting steps for connection and performance issues.
+- For custom experiments, modify the Unity scripts in `Assets/Scripts/` and ROS services in `ROS/src/panda_moveit/scripts/`.
+- For new message types, add them to `msg/` and `srv/` folders and rebuild messages in Unity.
+- For advanced users: extend the teleoperation pipeline with new interaction modes or robot behaviors.
+
+---
+
+This teleoperation system provides intuitive, real-time control of the Franka Panda robot through VR, making it ideal for research, training, and remote manipulation tasks.
 The `ros_tcp_endpoint` package from GitHub may have Windows-style (CRLF) line endings that can cause errors. If you encounter issues like `/usr/bin/env: 'python\r': No such file or directory`, fix them with:
 
 ```bash
