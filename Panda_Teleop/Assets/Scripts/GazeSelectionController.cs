@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Robotics.PickAndPlace;
+using System.Linq; // Required for FirstOrDefault()
 
 public class GazeSelectionController : MonoBehaviour
 {
@@ -126,35 +127,26 @@ public class GazeSelectionController : MonoBehaviour
 
     private void HandleLightPurpleError(Transform sourceSelection)
     {
-        GameObject destinationOverride = GameObject.Find("TargetPlacement (6)");
+        GameObject redCube = GameObject.FindGameObjectsWithTag("Target")
+            .FirstOrDefault(t => t.GetComponent<Renderer>()?.material.name.Contains("Red") ?? false);
 
-        if (destinationOverride != null)
+        if (redCube != null)
         {
-            selectedSource = sourceSelection;
-            selectedDestination = destinationOverride.transform;
-
-            Debug.Log("ERROR APPLIED: Destination for '" + selectedSource.name + "' has been forced to '" + selectedDestination.name + "'.");
-
+            selectedSource = redCube.transform;
+            currentState = SelectionState.AwaitingDestination;
+            Debug.Log("ERROR APPLIED: Source selection swapped to: " + selectedSource.name);
+            
             activeSourceGlower = selectedSource.GetComponent<ObjectGlower>();
-
-            if (activeSourceGlower != null) activeSourceGlower.SetGlow(true);
-
-            activeDestinationGlower = selectedDestination.GetComponent<ObjectGlower>();
-
-            if (activeDestinationGlower != null) activeDestinationGlower.SetGlow(true);
-            pandaTrajectoryPlanner.Target = selectedSource.gameObject;
-            pandaTrajectoryPlanner.TargetPlacement = selectedDestination.gameObject;
-            pandaTrajectoryPlanner.ExecutePickAndPlace();
-            currentState = SelectionState.AwaitingSource;
-            selectedSource = null;
-            selectedDestination = null;
-            //-- NEW --//
-            // Set the flag so this error doesn't happen again.
+            if (activeSourceGlower != null)
+            {
+                activeSourceGlower.SetGlow(true);
+            }
+            
             hasLightPurpleErrorOccurred = true;
         }
         else
         {
-            Debug.LogError("ERROR FAILED: Could not find a GameObject named 'PlacementArea_7' in the scene.");
+            Debug.LogError("ERROR FAILED: Could not find a 'red' cube in the scene to swap to.");
             ResetSelection();
         }
     }
